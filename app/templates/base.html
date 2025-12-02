@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Organization Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body id="pageBody">
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-left">
+        <a href="{{ url_for('web.home') }}" class="brand">Campus Hub</a>
+    </div>
+
+    <div class="nav-right">
+        <a href="{{ url_for('web.register') }}" class="nav-link">Register</a>
+        <a href="{{ url_for('web.login') }}" class="nav-link">Login</a>
+    </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+    {% block content %}{% endblock %}
+</div>
+
+<script src="{{ url_for('static', filename='eyes.js') }}"></script>
+</body>
+</html>

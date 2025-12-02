@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ org.name }}</h2>
+<p>{{ org.description }}</p>
+
+<h4>Officers</h4>
+{% if org.officers %}
+<ul>
+    {% for officer in org.officers %}
+    <li>{{ officer }}</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No officers assigned yet.</p>
+{% endif %}
+
+<p><strong>Contact Email:</strong> {{ org.contact_email }}</p>
+<p><strong>Created At:</strong> {{ org.created_at }}</p>
+
+<a href="{{ url_for('web.home') }}" class="btn btn-secondary mt-3">Back to Home</a>
+{% endblock %}

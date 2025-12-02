@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="auth-container">
+
+    <!-- Helmet with eyes -->
+    <div class="helmet-wrapper">
+        <img src="{{ url_for('static', filename='helmet.png') }}" class="helmet-img">
+
+        <!-- Eyes -->
+        <div class="eye eye-left"></div>
+        <div class="eye eye-right"></div>
+        <img src="{{ url_for('static', filename='helmetlayer.png') }}" alt="Helmet Overlay" class="helmet-overlay">
+    </div>
+
+    <form class="auth-form">
+        <h2>Login</h2>
+
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" required>
+        </div>
+
+        <div class="form-group password-group">
+            <label>Password</label>
+            <input type="password" id="passwordLogin" name="password" required>
+        </div>
+
+        <button type="submit">Login</button>
+        <p class="switch-link">Don't have an account?
+            <a href="{{ url_for('web.register') }}">Register</a>
+        </p>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='eyes.js') }}"></script>
+
+{% endblock %}
