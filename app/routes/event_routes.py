@@ -9,21 +9,19 @@ event_bp = Blueprint('events', __name__)
 def create_event():
     data = request.get_json() or {}
     try:
-        start = parser.isoparse(data['start_time']) if data.get('start_time') else None
-        end = parser.isoparse(data['end_time']) if data.get('end_time') else None
+        event_date = parser.isoparse(data['event_date']) if data.get('event_date') else None
         event = EventService.create_event(
             org_id=data.get('org_id'),
-            title=data.get('title'),
+            created_by_officer_role_id=data.get('created_by'),
+            event_name=data.get('event_name'),
             description=data.get('description'),
-            location=data.get('location'),
-            start_time=start,
-            end_time=end
+            event_date=event_date,
+            location=data.get('location')
         )
         return jsonify(event.to_dict()), 201
     except AppError as e:
         raise e
     except Exception as e:
-        # parser errors etc
         raise AppError(f"Invalid input: {e}", code='INVALID_INPUT', http_status=400)
 
 @event_bp.route('/upcoming', methods=['GET'])
