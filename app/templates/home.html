@@ -1,30 +1,76 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Welcome to Campus Organization Hub</h1>
 
-<h3>Organizations</h3>
-<div class="row">
-    {% for org in orgs %}
-    <div class="col-md-4">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">{{ org.name }}</h5>
-                <p class="card-text">{{ org.description }}</p>
-                <a href="{{ url_for('web.org_detail', org_id=org.id) }}" class="btn btn-primary">View</a>
-            </div>
+<div class="home-layout">
+
+    <!-- LEFT SIDEBAR: Joined Organizations -->
+    <aside class="left-sidebar">
+        <h3>Joined Organizations</h3>
+        <ul class="joined-orgs">
+            {% for org in joined_orgs %}
+            <li class="org-item">{{ org.name }}</li>
+            {% endfor %}
+        </ul>
+    </aside>
+
+    <!-- MIDDLE COLUMN: Announcements -->
+<main class="feed">
+    <h2 class="section-title">Announcements</h2>
+
+    {% for announcement in announcements %}
+    <div class="post-card">
+
+        <!-- Badge / Flair -->
+        {% if announcement.flair %}
+        <span class="post-flair">{{ announcement.flair }}</span>
+        {% endif %}
+
+        <h3 class="post-title">{{ announcement.title }}</h3>
+
+        <p class="post-body">{{ announcement.body }}</p>
+
+        <div class="post-meta">
+            <span class="post-time">{{ announcement.timestamp }}</span>
         </div>
+
+        {% if announcement.link %}
+        <a href="{{ announcement.link }}" class="post-button">View Details</a>
+        {% endif %}
     </div>
     {% endfor %}
+</main>
+
+    <!-- RIGHT SIDEBAR: Events + Organizations -->
+    <aside class="sidebar">
+
+        <!-- Events Panel -->
+        <div class="sidebar-box">
+            <h3 class="sidebar-title">Upcoming Events</h3>
+            {% for event in events %}
+            <div class="event-item">
+                <a class="event-link" href="{{ url_for('web.event_detail', event_id=event.id) }}">
+                    {{ event.title }}
+                </a>
+                <div class="event-time">{{ event.start_time }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Organizations Panel -->
+        <div class="sidebar-box" style="margin-top: 20px;">
+            <h3 class="sidebar-title">Organizations</h3>
+            {% for org in orgs %}
+            <div class="event-item">
+                <a class="event-link" href="{{ url_for('web.org_detail', org_id=org.id) }}">
+                    {{ org.name }}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+    </aside>
+
 </div>
 
-<h3>Upcoming Events</h3>
-<ul class="list-group">
-    {% for event in events %}
-    <li class="list-group-item">
-        <a href="{{ url_for('web.event_detail', event_id=event.id) }}">{{ event.title }}</a>
-        <span class="text-muted">{{ event.start_time }}</span>
-    </li>
-    {% endfor %}
-</ul>
 {% endblock %}
