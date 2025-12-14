@@ -1,7 +1,12 @@
 import os
 from flask import Flask, jsonify
+
 from .database import db
 from .services.errors import AppError
+from app.services.org_service import OrgService
+from app.services.event_service import EventService
+from app.services.announcement_service import AnnouncementService
+
 
 def create_app():
     app = Flask(__name__)
@@ -27,11 +32,16 @@ def create_app():
     db.init_app(app)
 
     # -----------------------------
-    # CREATE TABLES
+    # APPLICATION CONTEXT
     # -----------------------------
     with app.app_context():
         from . import models
         db.create_all()
+
+        # Import initial data
+        OrgService.import_from_csv()
+        EventService.import_from_csv()
+        AnnouncementService.import_from_csv()
 
     # -----------------------------
     # REGISTER BLUEPRINTS
@@ -40,14 +50,12 @@ def create_app():
     from .routes.org_routes import org_bp
     from .routes.application_routes import app_bp
     from .routes.event_routes import event_bp
-    from .routes.file_routes import file_bp
     from .routes.web_routes import web_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(org_bp, url_prefix='/api/orgs')
     app.register_blueprint(app_bp, url_prefix='/api/applications')
     app.register_blueprint(event_bp, url_prefix='/api/events')
-    app.register_blueprint(file_bp, url_prefix='/api/files')
     app.register_blueprint(web_bp)
 
     # -----------------------------

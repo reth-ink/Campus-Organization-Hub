@@ -15,8 +15,13 @@
     </div>
 
     <div class="nav-right">
-        <a href="{{ url_for('web.register') }}" class="nav-link">Register</a>
-        <a href="{{ url_for('web.login') }}" class="nav-link">Login</a>
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('web.create_org') }}" class="nav-link">Create Organization</a>
+            <a href="{{ url_for('web.logout') }}" class="nav-link">Logout</a>
+        {% else %}
+            <a href="{{ url_for('web.register') }}" class="nav-link">Register</a>
+            <a href="{{ url_for('web.login') }}" class="nav-link">Login</a>
+        {% endif %}
     </div>
 </nav>
 

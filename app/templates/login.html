@@ -18,7 +18,13 @@
             <input type="email" name="email" required>
         </div>
 
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" required>
+        </div>
+
         <button type="submit">Login</button>
+
         <p class="switch-link">Don't have an account?
             <a href="{{ url_for('web.register') }}">Register</a>
         </p>

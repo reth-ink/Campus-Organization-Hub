@@ -1,22 +1,52 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>{{ org.name }}</h2>
-<p>{{ org.description }}</p>
+<h2>{{ org.OrgName }}</h2>
+<p>{{ org.Description }}</p>
+
+<p><strong>Member Count:</strong> {{ member_count }}</p>
 
 <h4>Officers</h4>
-{% if org.officers %}
+{% if officers %}
 <ul>
-    {% for officer in org.officers %}
-    <li>{{ officer }}</li>
+    {% for officer in officers %}
+    <li>{{ officer.user_name }} - {{ officer.role_name }}</li>
     {% endfor %}
 </ul>
 {% else %}
 <p>No officers assigned yet.</p>
 {% endif %}
 
+<h4>Announcements</h4>
+{% if announcements %}
+<ul>
+    {% for ann in announcements %}
+    <li><strong>{{ ann.Title }}</strong> - {{ ann.Content }} <em>({{ ann.DatePosted }})</em></li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No announcements yet.</p>
+{% endif %}
+
+<h4>Upcoming Events</h4>
+{% if events %}
+<ul>
+    {% for ev in events %}
+    <li><strong>{{ ev.EventName }}</strong> - {{ ev.Description }} <em>on {{ ev.EventDate }} at {{ ev.Location }}</em> (Created by {{ ev.CreatorName }})</li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No upcoming events.</p>
+{% endif %}
+
 <p><strong>Contact Email:</strong> {{ org.contact_email }}</p>
 <p><strong>Created At:</strong> {{ org.created_at }}</p>
 
 <a href="{{ url_for('web.home') }}" class="btn btn-secondary mt-3">Back to Home</a>
+
+{% if is_officer %}
+    <a href="{{ url_for('web.create_announcement', org_id=org.OrgID) }}" class="btn btn-primary">Create Announcement</a>
+    <a href="{{ url_for('web.create_event', org_id=org.OrgID) }}" class="btn btn-primary">Create Event</a>
+{% endif %}
+
 {% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Create Announcement</h2>
+<form method="POST">
+    <div>
+        <label>Title</label>
+        <input type="text" name="title" required>
+    </div>
+    <div>
+        <label>Content</label>
+        <textarea name="content" required></textarea>
+    </div>
+    <button type="submit">Post Announcement</button>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+</form>
+{% endblock %}

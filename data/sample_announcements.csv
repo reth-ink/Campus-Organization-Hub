@@ -1,0 +1,27 @@
+AnnouncementID,OrgID,CreatedBy,Title,Content,DatePosted
+902,1,502,Code Review Meeting,Team code review,2024-02-03
+904,4,504,Dance Practice,Choreography session,2024-02-18
+906,1,506,Tech Workshop,Hands-on coding session,2024-03-06
+907,2,507,Choir Event,Annual choir concert,2024-03-01
+909,4,509,Dance Workshop,Choreography session,2024-03-10
+910,6,510,Newsletter Issue,Monthly newsletter,2024-03-03
+911,4,511,Dance Night,Dance practice,2024-03-10
+915,6,515,Publication Release,New edition published,2024-03-22
+917,4,517,Dance Festival,End-of-term showcase,2024-03-10
+918,3,518,Rehearsal Notice,Actor rehearsal schedule,2024-03-12
+920,3,520,Stage Setup,Stage and props setup,2024-03-18
+921,4,521,Dance Prep,Choreography preparation,2024-03-20
+922,7,522,Match Reminder,Upcoming game schedule,2024-03-25
+923,6,523,Publication Notice,New issue release,2024-03-30
+925,1,525,Tech Update,Software upgrade,2024-03-30
+927,4,527,Dance Workshop,Dance training session,2024-04-05
+930,6,530,Newsletter Issue,Monthly release,2024-04-12
+935,1,535,Tech Workshop,Coding workshop,2024-04-28
+938,7,538,Game Reminder,Upcoming match,2024-05-10
+939,6,539,Newsletter Issue,Monthly release,2024-05-12
+940,4,540,Dance Festival,Performance showcase,2024-05-15
+943,6,543,Publication Release,New edition,2024-05-22
+945,2,545,Choir Event,Annual performance,2024-05-28
+946,4,546,Dance Workshop,Training session,2024-06-01
+947,3,547,Stage Rehearsal,Actor rehearsal,2024-06-03
+948,7,548,Game Announcement,Upcoming match schedule,2024-06-05

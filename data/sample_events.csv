@@ -1,0 +1,29 @@
+EventID,OrgID,CreatedBy,EventName,EventDescription,EventDate,Location
+702,1,502,Tech Talk,Guest lecture,2024-03-03,Room 102
+704,4,504,Dance Show,Annual dance performance,2024-03-12,Gym
+706,1,506,Robotics Meet,Robotics demo,2024-04-15,Lab 1
+707,2,507,Music Jam,Band meetup,2024-04-02,Studio A
+709,4,509,Dance Camp,Intensive dance training,2024-04-08,Studio B
+710,6,510,Writing Workshop,Article creation session,2024-04-01,Room 201
+711,4,511,Dance Showcase,Performance rehearsal,2024-04-12,Studio C
+715,6,515,Writing Seminar,Article writing session,2024-04-18,Room 202
+717,4,517,Dance Fair,Student competition,2024-04-12,Hall 1
+718,3,518,Drama Workshop,Acting workshop,2024-04-08,Studio D
+720,3,520,Play Night,Performance preparation,2024-04-12,Main Stage
+721,4,521,Dance Night,Dance rehearsal,2024-04-15,Studio B
+722,7,522,Tournament,Sports competition,2024-04-20,Stadium
+723,6,523,Writing Camp,Article editing,2024-05-01,Room 203
+725,1,525,Hackathon,Coding contest,2024-05-10,Room 104
+727,4,527,Dance Fair,Performance rehearsal,2024-05-15,Studio A
+730,6,530,Writing Seminar,Writing workshop,2024-05-22,Room 205
+733,3,533,Play Night,Performance setup,2024-05-30,Main Stage
+735,1,535,Hackathon,Competition coding,2024-06-05,Room 106
+738,7,538,Tournament,Sports event,2024-06-15,Stadium
+739,6,539,Writing Camp,Editing session,2024-06-18,Room 207
+740,4,540,Dance Camp,Training workshop,2024-06-20,Studio C
+741,3,541,Play Night,Final performance,2024-06-22,Main Stage
+743,6,543,Writing Seminar,Workshop session,2024-06-28,Room 208
+745,2,545,Choir Festival,Performance day,2024-07-02,Auditorium
+746,4,546,Dance Fair,Showcase performance,2024-07-05,Studio B
+747,3,547,Drama Workshop,Acting practice,2024-07-08,Studio D
+748,7,548,Tournament,Sports event,2024-07-10,Stadium
