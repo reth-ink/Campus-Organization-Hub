@@ -1,13 +1,8 @@
 import os
 from flask import Flask, jsonify
-
 from .database import db
 from .services.errors import AppError
-from app.services.org_service import OrgService
-from app.services.membership_service import MembershipService
-from app.services.officer_role_service import OfficerRoleService
-from app.services.event_service import EventService
-from app.services.announcement_service import AnnouncementService
+from app.services.import_service import ImportService
 
 def create_app():
     app = Flask(__name__)
@@ -23,7 +18,6 @@ def create_app():
     # -----------------------------
     DATA_DIR = os.path.join(PROJECT_ROOT, 'data', 'database')
     os.makedirs(DATA_DIR, exist_ok=True)
-
     DB_PATH = os.path.join(DATA_DIR, 'campus_org_hub.db')
 
     app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
@@ -38,12 +32,7 @@ def create_app():
     with app.app_context():
         from . import models
         db.create_all()
-
-        OrgService.import_from_csv()
-        MembershipService.import_from_csv()
-        OfficerRoleService.import_from_csv()
-        EventService.import_from_csv()
-        AnnouncementService.import_from_csv()
+        ImportService.import_all()  # import all CSVs in the correct order
 
     # -----------------------------
     # REGISTER BLUEPRINTS
