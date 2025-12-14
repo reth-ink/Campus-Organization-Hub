@@ -25,6 +25,15 @@ class OfficerRoleService:
 
                     membership_id = int(row['MembershipID'])
 
+                    # Check if the referenced membership exists
+                    membership_exists = db.session.execute(
+                        text("SELECT 1 FROM memberships WHERE MembershipID = :mid"),
+                        {"mid": membership_id}
+                    ).fetchone()
+                    if not membership_exists:
+                        print(f"Skipping OfficerRole {row.get('RoleName')} - MembershipID {membership_id} not found")
+                        continue
+
                     # Skip if officer role already exists
                     exists = db.session.execute(
                         text("SELECT 1 FROM officer_roles WHERE MembershipID = :mid AND RoleName = :role"),
