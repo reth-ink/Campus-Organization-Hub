@@ -8,11 +8,21 @@ class User(db.Model):
     LastName = db.Column(db.String(80), nullable=False)
     Email = db.Column(db.String(120), unique=True, nullable=False)
 
+    # Relationships
+    memberships = db.relationship('Membership', back_populates='user', cascade='all, delete-orphan')
+
+
 class Organization(db.Model):
     __tablename__ = 'organizations'
     OrgID = db.Column(db.Integer, primary_key=True)
     OrgName = db.Column(db.String(120), nullable=False)
     Description = db.Column(db.Text)
+
+    # Relationships
+    memberships = db.relationship('Membership', back_populates='organization', cascade='all, delete-orphan')
+    announcements = db.relationship('Announcement', back_populates='organization', cascade='all, delete-orphan')
+    events = db.relationship('Event', back_populates='organization', cascade='all, delete-orphan')
+
 
 class Membership(db.Model):
     __tablename__ = 'memberships'
@@ -23,6 +33,12 @@ class Membership(db.Model):
     DateApplied = db.Column(db.DateTime, default=datetime.utcnow)
     DateApproved = db.Column(db.DateTime)
 
+    # Relationships
+    user = db.relationship('User', back_populates='memberships')
+    organization = db.relationship('Organization', back_populates='memberships')
+    officer_roles = db.relationship('OfficerRole', back_populates='membership', cascade='all, delete-orphan')
+
+
 class OfficerRole(db.Model):
     __tablename__ = 'officer_roles'
     OfficerRoleID = db.Column(db.Integer, primary_key=True)
@@ -30,6 +46,12 @@ class OfficerRole(db.Model):
     RoleName = db.Column(db.String(50), nullable=False)
     StartDate = db.Column(db.DateTime, default=datetime.utcnow)
     EndDate = db.Column(db.DateTime)
+
+    # Relationships
+    membership = db.relationship('Membership', back_populates='officer_roles')
+    announcements = db.relationship('Announcement', back_populates='creator', cascade='all, delete-orphan')
+    events = db.relationship('Event', back_populates='creator', cascade='all, delete-orphan')
+
 
 class Announcement(db.Model):
     __tablename__ = 'announcements'
@@ -40,6 +62,11 @@ class Announcement(db.Model):
     Content = db.Column(db.Text, nullable=False)
     DatePosted = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relationships
+    organization = db.relationship('Organization', back_populates='announcements')
+    creator = db.relationship('OfficerRole', back_populates='announcements')
+
+
 class Event(db.Model):
     __tablename__ = 'events'
     EventID = db.Column(db.Integer, primary_key=True)
@@ -49,3 +76,7 @@ class Event(db.Model):
     Description = db.Column(db.Text)
     EventDate = db.Column(db.DateTime)
     Location = db.Column(db.String(200))
+
+    # Relationships
+    organization = db.relationship('Organization', back_populates='events')
+    creator = db.relationship('OfficerRole', back_populates='events')

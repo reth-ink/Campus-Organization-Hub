@@ -7,10 +7,18 @@ def create_app():
     app = Flask(__name__)
 
     # -----------------------------
-    # DATABASE (ABSOLUTE PATH FIX)
+    # BASE DIRECTORY
     # -----------------------------
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    DB_PATH = os.path.join(BASE_DIR, '..', 'campus_hub.db')
+    PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, '..'))
+
+    # -----------------------------
+    # DATABASE PATH (data/database)
+    # -----------------------------
+    DATA_DIR = os.path.join(PROJECT_ROOT, 'data', 'database')
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+    DB_PATH = os.path.join(DATA_DIR, 'campus_org_hub.db')
 
     app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -19,10 +27,10 @@ def create_app():
     db.init_app(app)
 
     # -----------------------------
-    # FORCE MODEL REGISTRATION
+    # CREATE TABLES
     # -----------------------------
     with app.app_context():
-        from . import models  # 👈 CRITICAL
+        from . import models
         db.create_all()
 
     # -----------------------------
