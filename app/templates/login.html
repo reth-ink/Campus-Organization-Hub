@@ -3,33 +3,29 @@
 
 <div class="auth-container">
 
-    <!-- Helmet with eyes -->
     <div class="helmet-wrapper">
         <img src="{{ url_for('static', filename='helmet.png') }}" class="helmet-img">
-
-        <!-- Eyes -->
         <div class="eye eye-left"></div>
         <div class="eye eye-right"></div>
         <img src="{{ url_for('static', filename='helmetlayer.png') }}" alt="Helmet Overlay" class="helmet-overlay">
     </div>
 
-    <form class="auth-form">
+    <form class="auth-form" method="post" action="{{ url_for('web.login') }}">
         <h2>Login</h2>
 
         <div class="form-group">
-            <label>Username</label>
-            <input type="text" name="username" required>
-        </div>
-
-        <div class="form-group password-group">
-            <label>Password</label>
-            <input type="password" id="passwordLogin" name="password" required>
+            <label>Email</label>
+            <input type="email" name="email" required>
         </div>
 
         <button type="submit">Login</button>
         <p class="switch-link">Don't have an account?
             <a href="{{ url_for('web.register') }}">Register</a>
         </p>
+
+        {% if error %}
+            <p style="color: red;">{{ error }}</p>
+        {% endif %}
     </form>
 </div>
 

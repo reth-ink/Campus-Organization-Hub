@@ -1,4 +1,4 @@
-from ..models import Event, Organization
+from ..models import Event, Organization, OfficerRole
 from ..database import db
 from .errors import AppError
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,14 +6,17 @@ from datetime import datetime
 
 class EventService:
     @staticmethod
-    def create_event(org_id: int, title: str, description: str = None, location: str = None, start_time: datetime = None, end_time: datetime = None):
+    def create_event(org_id: int, created_by_officer_role_id: int, event_name: str, description: str = None, event_date: datetime = None, location: str = None):
         org = Organization.query.get(org_id)
         if not org:
             raise AppError("Organization not found", code='NOT_FOUND', http_status=404)
-        if not title:
-            raise AppError("Title required", code='INVALID_INPUT', http_status=400)
+        officer = OfficerRole.query.get(created_by_officer_role_id)
+        if not officer:
+            raise AppError("Officer role not found", code='NOT_FOUND', http_status=404)
+        if not event_name:
+            raise AppError("EventName required", code='INVALID_INPUT', http_status=400)
         try:
-            event = Event(org_id=org_id, title=title, description=description, location=location, start_time=start_time, end_time=end_time)
+            event = Event(OrgID=org_id, CreatedBy=created_by_officer_role_id, EventName=event_name, Description=description, EventDate=event_date, Location=location)
             db.session.add(event)
             db.session.commit()
             return event
@@ -23,8 +26,5 @@ class EventService:
 
     @staticmethod
     def upcoming_events(limit: int = 10):
-        # Return upcoming events sorted by start_time using lambda in sort key
-        events = Event.query.filter(Event.start_time != None).order_by(Event.start_time).limit(limit).all()
-        # transform
-        event_dicts = list(map(lambda e: e.to_dict(), events))
-        return event_dicts
+        events = Event.query.order_by(Event.EventDate).limit(limit).all()
+        return [e.to_dict() for e in events]

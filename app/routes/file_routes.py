@@ -1,6 +1,6 @@
 from flask import Blueprint, request, Response, jsonify
 from ..services.file_service import FileService
-from ..models import User, Organization, Application, Event
+from ..models import User, Organization, Membership, Event
 from ..services.errors import AppError
 
 file_bp = Blueprint('files', __name__)
@@ -9,13 +9,13 @@ file_bp = Blueprint('files', __name__)
 def export_table(table):
     try:
         if table == 'users':
-            csv_data = FileService.export_table_to_csv(User, ['id', 'username', 'role', 'full_name', 'created_at'])
+            csv_data = FileService.export_table_to_csv(User, ['UserID', 'FirstName', 'LastName', 'Email'])
         elif table == 'organizations':
-            csv_data = FileService.export_table_to_csv(Organization, ['id', 'name', 'description', 'officers', 'contact_email', 'created_at'])
-        elif table == 'applications':
-            csv_data = FileService.export_table_to_csv(Application, ['id', 'applicant_id', 'org_id', 'status', 'submitted_at'])
+            csv_data = FileService.export_table_to_csv(Organization, ['OrgID', 'OrgName', 'Description'])
+        elif table == 'memberships':
+            csv_data = FileService.export_table_to_csv(Membership, ['MembershipID', 'UserID', 'OrgID', 'Status', 'DateApplied', 'DateApproved'])
         elif table == 'events':
-            csv_data = FileService.export_table_to_csv(Event, ['id', 'org_id', 'title', 'location', 'start_time', 'end_time'])
+            csv_data = FileService.export_table_to_csv(Event, ['EventID', 'OrgID', 'CreatedBy', 'EventName', 'EventDate', 'Location'])
         else:
             raise AppError("Unknown table", code='INVALID_INPUT', http_status=400)
         return Response(csv_data, mimetype='text/csv', headers={"Content-disposition":"attachment; filename=" + f"{table}.csv"})
