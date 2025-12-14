@@ -4,9 +4,10 @@ from flask import Flask, jsonify
 from .database import db
 from .services.errors import AppError
 from app.services.org_service import OrgService
+from app.services.membership_service import MembershipService
+from app.services.officer_role_service import OfficerRoleService
 from app.services.event_service import EventService
 from app.services.announcement_service import AnnouncementService
-
 
 def create_app():
     app = Flask(__name__)
@@ -38,8 +39,9 @@ def create_app():
         from . import models
         db.create_all()
 
-        # Import initial data
         OrgService.import_from_csv()
+        MembershipService.import_from_csv()
+        OfficerRoleService.import_from_csv()
         EventService.import_from_csv()
         AnnouncementService.import_from_csv()
 
