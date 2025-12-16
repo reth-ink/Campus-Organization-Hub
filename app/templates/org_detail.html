@@ -113,7 +113,7 @@
 
                 <h3 class="post-title">{{ ann.Title }}</h3>
                 <p class="post-body">{{ ann.Content }}</p>
-                <div class="post-meta">Posted: {{ ann.DatePosted }}</div>
+                <div class="post-meta">Posted: {{ ann.DatePosted }}{% if ann.CreatorName %} &middot; Posted by: {{ ann.CreatorName }}{% endif %}</div>
             </div>
             {% endfor %}
         {% else %}

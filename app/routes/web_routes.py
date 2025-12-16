@@ -61,6 +61,16 @@ def home():
         # fallback: leave order unchanged
         pass
 
+    # map creators for announcements so we can show human-friendly names in the feed
+    users = UserService.get_all_users()
+    user_map = { u['UserID']: f"{u['FirstName']} {u['LastName']}" for u in users }
+    ann_mapped = []
+    for a in announcements:
+        ad = dict(a)
+        ad['CreatorName'] = _resolve_creator_name(a.get('CreatedBy'), user_map)
+        ann_mapped.append(ad)
+    announcements = ann_mapped
+
     # joined_orgs: if user logged in, show organizations they're a member of
     joined = []
     user_id = session.get('user_id')
