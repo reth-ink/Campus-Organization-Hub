@@ -1,13 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>{{ event.title }}</h2>
-<p>{{ event.description }}</p>
+<h2>{{ event.EventName }}</h2>
+<p>{{ event.EventDescription }}</p>
 
-<p><strong>Location:</strong> {{ event.location }}</p>
-<p><strong>Start Time:</strong> {{ event.start_time }}</p>
-<p><strong>End Time:</strong> {{ event.end_time }}</p>
-<p><strong>Created At:</strong> {{ event.created_at }}</p>
+<p><strong>Location:</strong> {{ event.Location }}</p>
+<p><strong>Date:</strong> {{ event.EventDate }}</p>
+<p><strong>Created By (user id):</strong> {{ event.CreatedBy }}</p>
 
 <a href="{{ url_for('web.home') }}" class="btn btn-secondary mt-3">Back to Home</a>
 {% endblock %}

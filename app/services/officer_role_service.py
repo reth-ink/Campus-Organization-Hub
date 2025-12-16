@@ -1,77 +1,48 @@
 import csv
-import os
-from datetime import datetime
-from sqlalchemy import text
-from ..database import db
-from .errors import AppError
-from ..models import OfficerRole
-
-DATA_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
-OFFICER_ROLE_CSV = os.path.join(DATA_FOLDER, 'officer_role.csv')
+from flask import current_app
+from ..database import get_db
+from ..models.officer_role import OfficerRole
+from ..utils.errors import AppError
 
 class OfficerRoleService:
 
     @staticmethod
-    def import_from_csv():
-        if not os.path.exists(OFFICER_ROLE_CSV):
-            return
-
+    def create_officer_role(name, permissions):
+        db = get_db()
         try:
-            with open(OFFICER_ROLE_CSV, newline='', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    if not row.get('MembershipID') or not row.get('RoleName'):
-                        continue
-
-                    membership_id = int(row['MembershipID'])
-
-                    # Check if the referenced membership exists
-                    membership_exists = db.session.execute(
-                        text("SELECT 1 FROM memberships WHERE MembershipID = :mid"),
-                        {"mid": membership_id}
-                    ).fetchone()
-                    if not membership_exists:
-                        print(f"Skipping OfficerRole {row.get('RoleName')} - MembershipID {membership_id} not found")
-                        continue
-
-                    # Skip if officer role already exists
-                    exists = db.session.execute(
-                        text("SELECT 1 FROM officer_roles WHERE MembershipID = :mid AND RoleName = :role"),
-                        {"mid": membership_id, "role": row['RoleName']}
-                    ).fetchone()
-                    if exists:
-                        continue
-
-                    # Parse dates
-                    role_start = None
-                    role_end = None
-                    if row.get('RoleStart'):
-                        try:
-                            role_start = datetime.strptime(row['RoleStart'], "%Y-%m-%d")
-                        except ValueError:
-                            role_start = datetime.utcnow()
-                    if row.get('RoleEnd'):
-                        try:
-                            role_end = datetime.strptime(row['RoleEnd'], "%Y-%m-%d")
-                        except ValueError:
-                            role_end = None
-
-                    role = OfficerRole(
-                        MembershipID=membership_id,
-                        RoleName=row['RoleName'],
-                        RoleStart=role_start or datetime.utcnow(),
-                        RoleEnd=role_end,
-                        created_at=datetime.utcnow(),
-                        updated_at=datetime.utcnow()
-                    )
-                    db.session.add(role)
-
-            db.session.commit()
-
-        except Exception as e:
-            db.session.rollback()
-            raise AppError(
-                f"Error importing officer roles CSV: {str(e)}",
-                code="CSV_ERROR",
-                http_status=500
+            # officer_roles table in schema_v1 uses MembershipID, RoleName, RoleStart, RoleEnd
+            db.execute(
+                'INSERT INTO officer_roles (MembershipID, RoleName, StartDate, EndDate) VALUES (?, ?, ?, ?)',
+                (None, name, None, None)
             )
+            db.commit()
+        except Exception as e:
+            raise AppError('DB_ERROR', f'Could not create officer role: {str(e)}')
+
+    @staticmethod
+    def get_all_officer_roles():
+        db = get_db()
+        # select canonical columns from schema (StartDate/EndDate) — model accepts these
+        rows = db.execute('SELECT OfficerRoleID, MembershipID, RoleName, StartDate, EndDate FROM officer_roles').fetchall()
+        return [OfficerRole(**dict(row)).to_dict() for row in rows]
+
+    @staticmethod
+    def import_officer_roles_from_csv(file_path):
+        try:
+            with open(file_path, newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for r in reader:
+                    # CSV uses OfficerRoleID, MembershipID, RoleName, RoleStart, RoleEnd
+                    membership = r.get('MembershipID') or r.get('membership_id')
+                    role_name = r.get('RoleName') or r.get('name')
+                    role_start = r.get('StartDate') or r.get('RoleStart')
+                    role_end = r.get('EndDate') or r.get('RoleEnd')
+                    try:
+                        db = get_db()
+                        db.execute('INSERT OR IGNORE INTO officer_roles (OfficerRoleID, MembershipID, RoleName, StartDate, EndDate) VALUES (?, ?, ?, ?, ?)',
+                                   (r.get('OfficerRoleID'), membership, role_name, role_start, role_end))
+                        db.commit()
+                    except Exception as e:
+                        raise AppError('DB_ERROR', f'Could not create officer role from CSV: {str(e)}')
+        except Exception as e:
+            raise AppError('CSV_IMPORT_ERROR', f'Error importing CSV: {str(e)}')

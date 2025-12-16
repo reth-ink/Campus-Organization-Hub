@@ -2,7 +2,7 @@
 
 {% block content %}
 <h2>{{ org.OrgName }}</h2>
-<p>{{ org.Description }}</p>
+<p>{{ org.OrgDescription }}</p>
 
 <p><strong>Member Count:</strong> {{ member_count }}</p>
 
@@ -39,8 +39,8 @@
 <p>No upcoming events.</p>
 {% endif %}
 
-<p><strong>Contact Email:</strong> {{ org.contact_email }}</p>
-<p><strong>Created At:</strong> {{ org.created_at }}</p>
+<p><strong>Contact Email:</strong> {{ org.contact_email if org.get('contact_email') else '' }}</p>
+<p><strong>Created At:</strong> {{ org.created_at if org.get('created_at') else '' }}</p>
 
 <a href="{{ url_for('web.home') }}" class="btn btn-secondary mt-3">Back to Home</a>
 
