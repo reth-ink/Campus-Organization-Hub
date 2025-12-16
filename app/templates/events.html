@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container">
+    <h2>All Events</h2>
+
+    {% if events %}
+        {% for ev in events %}
+        <div class="post-card" style="margin-bottom:10px;">
+            <h3 class="post-title"><a href="{{ url_for('web.event_detail', event_id=ev.EventID) }}">{{ ev.EventName }}</a></h3>
+            <div class="post-meta">When: {{ ev.EventDate }}{% if ev.Location %} &middot; Where: {{ ev.Location }}{% endif %}</div>
+            <p class="post-body">{{ ev.Description }}</p>
+            <div style="font-size:0.9rem;color:#666;">Created by: {{ ev.CreatorName or 'Unknown' }}</div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No events scheduled.</p>
+    {% endif %}
+
+</div>
+
+{% endblock %}

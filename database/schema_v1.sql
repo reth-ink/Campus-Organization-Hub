@@ -39,6 +39,11 @@ CREATE TABLE officer_roles (
     RoleName VARCHAR(50) NOT NULL,
     StartDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     EndDate DATETIME,
+    -- Permission flags: 0 = false, 1 = true
+    can_post_announcements INTEGER DEFAULT 0,
+    can_create_events INTEGER DEFAULT 0,
+    can_approve_members INTEGER DEFAULT 0,
+    can_assign_roles INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (MembershipID) REFERENCES memberships(MembershipID) ON DELETE CASCADE

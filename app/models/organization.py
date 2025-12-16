@@ -13,5 +13,8 @@ class Organization:
         return {
             "OrgID": self.OrgID,
             "OrgName": self.OrgName,
-            "OrgDescription": self.OrgDescription
+            "OrgDescription": self.OrgDescription,
+            # optional UI fields
+            "contact_email": getattr(self, 'contact_email', None),
+            "created_at": getattr(self, 'created_at', None)
         }

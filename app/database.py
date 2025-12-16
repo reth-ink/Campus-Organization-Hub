@@ -1,10 +1,18 @@
 import sqlite3
 import os
-from flask import g
+from flask import g, current_app
 
 def get_db():
     if 'db' not in g:
-        g.db = sqlite3.connect('campus_hub.db', detect_types=sqlite3.PARSE_DECLTYPES)
+        db_path = None
+        try:
+            # prefer Flask app config if available
+            db_path = current_app.config.get('DATABASE')
+        except Exception:
+            db_path = None
+        if not db_path:
+            db_path = os.environ.get('DATABASE') or 'campus_hub.db'
+        g.db = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row
     return g.db
 

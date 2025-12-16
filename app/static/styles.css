@@ -244,6 +244,8 @@ body {
     width: 90%;
     max-width: 1400px;
     margin: 20px auto;
+    /* Make the layout fill the viewport so inner columns can scroll independently */
+    height: calc(100vh - 140px);
 }
 
 /* --------------------- LEFT SIDEBAR --------------------- */
@@ -252,7 +254,9 @@ body {
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-    height: fit-content;
+    /* allow the left sidebar to scroll independently */
+    height: 100%;
+    overflow: auto;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -295,6 +299,13 @@ body {
     font-size: 1.6rem;
     font-weight: bold;
     color: var(--primary-color);
+}
+
+/* Make the central feed scrollable within its column */
+.feed {
+    height: 100%;
+    overflow: auto;
+    padding-right: 6px; /* give space for scrollbar */
 }
 
 .post-card {
@@ -353,13 +364,36 @@ body {
     transform: translateY(-2px);
 }
 
+/* small badge for pending membership count */
+.pending-badge{
+    display: inline-block;
+    background:#e0e0e0;
+    color:#111;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:999px;
+    margin-left:8px;
+    font-size:0.8rem;
+    vertical-align:middle;
+}
+
+/* Disabled button style for actions the user cannot perform */
+.btn-disabled {
+    opacity: 0.55;
+    pointer-events: none;
+    cursor: default;
+    text-decoration: none;
+}
+
 /* --------------------- RIGHT SIDEBAR --------------------- */
 .sidebar {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    position: sticky;
-    top: 20px;
+    /* make right column scroll independently instead of sticking */
+    position: static;
+    height: 100%;
+    overflow: auto;
 }
 
 .sidebar-box {

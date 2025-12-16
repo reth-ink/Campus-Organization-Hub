@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container">
+    <h2>Profile</h2>
+    {% if user %}
+        <p><strong>Name:</strong> {{ user.FirstName }} {{ user.LastName }}</p>
+        <p><strong>Email:</strong> {{ user.Email }}</p>
+        <p><strong>Joined:</strong> {{ user.created_at }}</p>
+    {% else %}
+        <p>User not found.</p>
+    {% endif %}
+</div>
+{% endblock %}

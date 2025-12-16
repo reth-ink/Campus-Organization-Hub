@@ -5,6 +5,8 @@ scripts/seed_db.py
 Run CSV imports (explicitly) and print errors and table counts.
 Run from repository root:
     python scripts/seed_db.py
+Re-run and recreate DB:
+    python scripts/seed_db.py --recreate-db
 """
 import os
 import sys
@@ -25,6 +27,7 @@ from app.database import get_db
 def run_import(service, func_name, csv_path, errors):
     if not os.path.exists(csv_path):
         print(f"CSV not found: {csv_path} — skipping")
+        
         return
     try:
         getattr(service, func_name)(csv_path)

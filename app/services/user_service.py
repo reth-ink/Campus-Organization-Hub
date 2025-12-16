@@ -53,6 +53,12 @@ class UserService:
         return dict(row) if row is not None else None
 
     @staticmethod
+    def get_user_row_by_id(user_id):
+        db = get_db()
+        row = db.execute('SELECT UserID, FirstName, LastName, Email, created_at FROM users WHERE UserID = ?', (user_id,)).fetchone()
+        return dict(row) if row is not None else None
+
+    @staticmethod
     def verify_password(plain_password, password_hash):
         try:
             return pbkdf2_sha256.verify(str(plain_password), password_hash)

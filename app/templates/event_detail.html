@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>{{ event.EventName }}</h2>
-<p>{{ event.EventDescription }}</p>
 
-<p><strong>Location:</strong> {{ event.Location }}</p>
-<p><strong>Date:</strong> {{ event.EventDate }}</p>
-<p><strong>Created By (user id):</strong> {{ event.CreatedBy }}</p>
+<div class="container">
+    <a href="{{ url_for('web.home') }}" class="event-link">&larr; Back</a>
+    <div class="post-card" style="margin-top:12px;">
+        <h1 class="post-title">{{ event.EventName }}</h1>
+        <div class="post-meta">When: {{ event.EventDate }}{% if event.Location %} &middot; Where: {{ event.Location }}{% endif %}</div>
+        <div style="margin-top:10px;">{{ event.Description }}</div>
+        <div style="margin-top:12px; font-size:0.9rem; color:#666;">Created by: {{ event.CreatorName or 'Unknown' }}</div>
+    </div>
 
-<a href="{{ url_for('web.home') }}" class="btn btn-secondary mt-3">Back to Home</a>
+</div>
+
 {% endblock %}

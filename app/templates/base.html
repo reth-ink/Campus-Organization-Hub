@@ -15,8 +15,9 @@
     </div>
 
     <div class="nav-right">
-        {% if session.get('user_id') %}
+        {% if current_user %}
             <a href="{{ url_for('web.create_org') }}" class="nav-link">Create Organization</a>
+            <a href="{{ url_for('web.profile') }}" class="nav-link">{{ current_user.FirstName }} {{ current_user.LastName }}</a>
             <a href="{{ url_for('web.logout') }}" class="nav-link">Logout</a>
         {% else %}
             <a href="{{ url_for('web.register') }}" class="nav-link">Register</a>
@@ -27,6 +28,16 @@
 
 <!-- MAIN CONTENT -->
 <div class="main-content">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div style="max-width:90vw;margin:10px auto;">
+                {% for msg in messages %}
+                    <div class="post-card" style="background:#fff8e1;border-left:4px solid #f0c000;">{{ msg }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
 </div>
 

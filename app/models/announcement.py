@@ -20,5 +20,8 @@ class Announcement:
             "CreatedBy": self.CreatedBy,
             "Title": self.Title,
             "Content": self.Content,
-            "DatePosted": self.DatePosted
+            "DatePosted": self.DatePosted,
+            # UI helpers — may be None if not provided by services
+            "flair": getattr(self, 'flair', None),
+            "link": getattr(self, 'link', None)
         }

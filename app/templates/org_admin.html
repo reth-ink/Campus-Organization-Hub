@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="home-layout">
+
+    <aside class="left-sidebar">
+        <h3>{{ org.OrgName }} — Admin</h3>
+        <p>{{ org.OrgDescription }}</p>
+        <p><strong>Members:</strong> {{ member_count }}</p>
+        <a href="{{ url_for('web.org_detail', org_id=org.OrgID) }}" class="event-link">Back to org page</a>
+    </aside>
+
+    <main class="feed">
+        <h2 class="section-title">Membership Approvals</h2>
+
+        <h4>Pending Applications</h4>
+        {% if pending_memberships %}
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr><th>User</th><th>Applied</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    {% for m in pending_memberships %}
+                    <tr>
+                        <td>{{ m.user_name }}</td>
+                        <td>{{ m.DateApplied }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('web.approve_membership', org_id=org.OrgID) }}" style="display:inline-block;margin-right:8px;">
+                                <input type="hidden" name="membership_id" value="{{ m.MembershipID }}">
+                                <input type="hidden" name="action" value="approve">
+                                <button class="post-button" type="submit">Approve</button>
+                            </form>
+                            <form method="post" action="{{ url_for('web.approve_membership', org_id=org.OrgID) }}" style="display:inline-block;">
+                                <input type="hidden" name="membership_id" value="{{ m.MembershipID }}">
+                                <input type="hidden" name="action" value="reject">
+                                <button class="post-button" type="submit">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No pending applications.</p>
+        {% endif %}
+
+        <h4 style="margin-top:20px;">Assign Roles</h4>
+        <p>Assign an officer role to a member and set permissions.</p>
+        <form method="post" action="{{ url_for('web.assign_role', org_id=org.OrgID) }}">
+            <label for="membership_id">Select member</label>
+            <select name="membership_id" id="membership_id">
+                {% for mem in memberships %}
+                    {% set st = (mem.get('Status') or mem.get('status') or '') %}
+                    {% if st and st.lower() == 'approved' %}
+                        <option value="{{ mem.MembershipID }}">{{ mem.user_name }} ({{ mem.Status }})</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+            <div style="margin-top:8px;">
+                <label>Role name: <input type="text" name="role_name" required></label>
+            </div>
+            <div style="margin-top:8px;">
+                <label><input type="checkbox" name="can_post_announcements" value="1"> Can post announcements</label><br>
+                <label><input type="checkbox" name="can_create_events" value="1"> Can create events</label><br>
+                <label><input type="checkbox" name="can_approve_members" value="1"> Can approve members</label><br>
+                <label><input type="checkbox" name="can_assign_roles" value="1"> Can assign roles</label>
+            </div>
+            <div style="margin-top:10px;">
+                <button class="post-button" type="submit">Assign Role</button>
+            </div>
+        </form>
+
+    </main>
+
+    <aside class="sidebar">
+        <div class="sidebar-box">
+            <h3 class="sidebar-title">Current Officers</h3>
+            {% if officers %}
+                <ul>
+                {% for o in officers %}
+                    <li>{{ o.user_name }} — {{ o.role_name }} {% if o.can_approve_members %}(approve){% endif %}{% if o.can_assign_roles %}(assign){% endif %}</li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>No officers.</p>
+            {% endif %}
+        </div>
+    </aside>
+
+</div>
+{% endblock %}
