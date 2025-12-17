@@ -48,18 +48,8 @@
             <div class="post-card">
                 <h3>Activity</h3>
                 <p>Announcements created: <strong>{{ announcement_count }}</strong></p>
-                <p>Quick actions:</p>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-                    {% if can_post_announcements %}
-                        <a class="post-button" href="{{ url_for('web.home') }}">Create Announcement</a>
-                    {% endif %}
-                    {% if can_create_events %}
-                        <a class="post-button" href="{{ url_for('web.events') }}">Create Event</a>
-                    {% endif %}
-                </div>
             </div>
 
-            <!-- About card removed per request -->
         </main>
 
         <aside class="sidebar">

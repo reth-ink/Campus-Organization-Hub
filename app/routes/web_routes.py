@@ -669,9 +669,11 @@ def profile():
     announcements = AnnouncementService.get_all_announcements()
     user_ann_count = sum(1 for a in announcements if str(a.get('CreatedBy')) == str(user_id) or a.get('CreatedBy') in (None, ''))
 
-    # determine create permissions across user's organizations
+    # determine create permissions across user's organizations and pick a default org
     can_post_announcements_any = False
     can_create_events_any = False
+    create_ann_org_id = None
+    create_event_org_id = None
     try:
         uid = int(user_id)
         for uo in user_orgs:
@@ -679,11 +681,16 @@ def profile():
                 org_obj = uo.get('org')
                 if not org_obj:
                     continue
-                perms = OfficerRoleService.user_permissions_for_org(int(org_obj.get('OrgID') or 0), uid)
+                oid = int(org_obj.get('OrgID') or 0)
+                perms = OfficerRoleService.user_permissions_for_org(oid, uid)
                 if perms.get('can_post_announcements'):
                     can_post_announcements_any = True
+                    if create_ann_org_id is None:
+                        create_ann_org_id = oid
                 if perms.get('can_create_events'):
                     can_create_events_any = True
+                    if create_event_org_id is None:
+                        create_event_org_id = oid
                 if can_post_announcements_any and can_create_events_any:
                     break
             except Exception:
@@ -693,4 +700,4 @@ def profile():
         can_post_announcements_any = False
         can_create_events_any = False
 
-    return render_template('profile.html', user=user, user_orgs=user_orgs, announcement_count=user_ann_count, can_post_announcements=can_post_announcements_any, can_create_events=can_create_events_any)
+    return render_template('profile.html', user=user, user_orgs=user_orgs, announcement_count=user_ann_count, can_post_announcements=can_post_announcements_any, can_create_events=can_create_events_any, create_ann_org_id=create_ann_org_id, create_event_org_id=create_event_org_id)
