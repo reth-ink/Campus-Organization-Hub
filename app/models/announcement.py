@@ -1,11 +1,13 @@
 class Announcement:
-    def __init__(self, AnnouncementID, OrgID, CreatedBy, Title, Content, DatePosted=None, created_at=None, updated_at=None, **kwargs):
+    def __init__(self, AnnouncementID, OrgID, CreatedBy, Title, Content, DatePosted=None, Attachments=None, created_at=None, updated_at=None, **kwargs):
         self.AnnouncementID = AnnouncementID
         self.OrgID = OrgID
         self.CreatedBy = CreatedBy
         self.Title = Title
         self.Content = Content
         self.DatePosted = DatePosted
+        # Attachments may be stored as JSON text in the DB or as a Python object
+        self.Attachments = Attachments
 
         # attach optional audit timestamps and any additional fields
         self.created_at = created_at
@@ -20,6 +22,7 @@ class Announcement:
             "CreatedBy": self.CreatedBy,
             "Title": self.Title,
             "Content": self.Content,
+            "Attachments": self.Attachments,
             "DatePosted": self.DatePosted,
             # UI helpers — may be None if not provided by services
             "flair": getattr(self, 'flair', None),

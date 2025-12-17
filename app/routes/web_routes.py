@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from ..services.organization_service import OrgService
 from ..services.event_service import EventService
 from ..services.announcement_service import AnnouncementService
@@ -79,6 +79,11 @@ def home():
         org_map = {o['OrgID']: o for o in orgs}
         for m in memberships:
             try:
+                # Only include approved memberships in the joined organizations list.
+                status = (m.get('Status') or m.get('status') or '').lower()
+                if status != 'approved':
+                    continue
+
                 if int(m.get('UserID')) == int(user_id):
                     org = org_map.get(int(m.get('OrgID')))
                     if org and org not in joined:
@@ -452,6 +457,7 @@ def create_announcement(org_id):
     if request.method == 'POST':
         title = request.form.get('title')
         content = request.form.get('content')
+        links_raw = request.form.get('links')
         if not title or not content:
             error = 'Title and content required'
         else:
@@ -466,7 +472,40 @@ def create_announcement(org_id):
                     error = 'You do not have permission to post announcements for this organization.'
 
             if not error:
-                AnnouncementService.create_announcement(org_id, created_by, title, content, None)
+                # process attachments: files and links
+                attachments = []
+                # links: comma separated
+                if links_raw:
+                    for url in [u.strip() for u in links_raw.split(',') if u.strip()]:
+                        attachments.append({'type': 'link', 'url': url})
+
+                # files
+                from werkzeug.utils import secure_filename
+                import os, time, random, string, mimetypes, json
+                upload_dir = os.path.join(current_app.root_path, 'static', 'uploads')
+                os.makedirs(upload_dir, exist_ok=True)
+                files = request.files.getlist('attachments')
+                for f in files:
+                    if not f or f.filename == '':
+                        continue
+                    filename = secure_filename(f.filename)
+                    # prefix with timestamp/random to avoid collisions
+                    prefix = str(int(time.time())) + '_' + ''.join(random.choices(string.ascii_lowercase+string.digits, k=6))
+                    dest_name = f"{prefix}_{filename}"
+                    dest_path = os.path.join(upload_dir, dest_name)
+                    f.save(dest_path)
+                    mime = f.mimetype or mimetypes.guess_type(dest_name)[0] or ''
+                    url_path = url_for('static', filename=f'uploads/{dest_name}')
+                    # categorize attachment by mime
+                    atype = 'file'
+                    if mime.startswith('image/'):
+                        atype = 'image'
+                    elif mime.startswith('video/'):
+                        atype = 'video'
+                    attachments.append({'type': atype, 'url': url_path, 'filename': dest_name, 'mimetype': mime})
+
+                # store attachments as JSON in DB
+                AnnouncementService.create_announcement(org_id, created_by, title, content, None, attachments)
                 flash('Announcement posted')
             else:
                 flash(error)
@@ -507,12 +546,17 @@ def register():
         if not first or not last or not email or not password:
             error = 'All fields are required'
         else:
-            UserService.create_user(first, last, email, password)
-            # set session to new user
-            row = UserService.get_user_row_by_email(email)
-            if row:
-                session['user_id'] = row.get('UserID')
-            return redirect(url_for('web.home'))
+            # Prevent creating a new account if the email already exists
+            existing = UserService.get_user_row_by_email(email)
+            if existing:
+                error = 'An account with that email already exists'
+            else:
+                UserService.create_user(first, last, email, password)
+                # set session to new user
+                row = UserService.get_user_row_by_email(email)
+                if row:
+                    session['user_id'] = row.get('UserID')
+                return redirect(url_for('web.home'))
     return render_template('register.html', error=error)
 
 

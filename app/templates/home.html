@@ -36,6 +36,21 @@
             <span class="post-time">{{ announcement.DatePosted }}</span>
             {% if announcement.CreatorName %} &middot; Posted by: {{ announcement.CreatorName }}{% endif %}
         </div>
+        {% if announcement.Attachments %}
+            <div style="margin-top:8px;">
+                {% for a in announcement.Attachments %}
+                    {% if a.type == 'image' %}
+                        <div style="margin-bottom:8px;"><img src="{{ a.url }}" alt="attachment" style="max-width:100%;height:auto;border-radius:8px;" /></div>
+                    {% elif a.type == 'video' %}
+                        <div style="margin-bottom:8px;"><video controls style="max-width:100%;height:auto;"><source src="{{ a.url }}" type="{{ a.mimetype }}">Your browser does not support the video tag.</video></div>
+                    {% elif a.type == 'link' %}
+                        <div style="margin-bottom:6px;"><a href="{{ a.url }}" target="_blank" rel="noopener" class="event-link">{{ a.url }}</a></div>
+                    {% else %}
+                        <div style="margin-bottom:6px;"><a href="{{ a.url }}" download class="event-link">{{ a.filename or a.url }}</a></div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
 
         {% if announcement.link %}
         <a href="{{ announcement.link }}" class="post-button">View Details</a>

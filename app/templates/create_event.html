@@ -1,26 +1,34 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Create Event</h2>
-<form method="POST">
-    <div>
-        <label>Name</label>
-        <input type="text" name="name" required>
-    </div>
-    <div>
-        <label>Description</label>
-        <textarea name="description"></textarea>
-    </div>
-    <div>
-        <label>Date</label>
-        <input type="datetime-local" name="event_date" required>
-    </div>
-    <div>
-        <label>Location</label>
-        <input type="text" name="location" required>
-    </div>
-    <button type="submit">Create Event</button>
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
-</form>
+<div class="auth-container">
+    <form class="auth-form" method="POST">
+        <h2>Create Event</h2>
+
+        <div class="form-group">
+            <label for="event-name">Name</label>
+            <input id="event-name" type="text" name="name" required placeholder="Event name">
+        </div>
+
+        <div class="form-group">
+            <label for="event-desc">Description</label>
+            <textarea id="event-desc" name="description" placeholder="Event details"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="event-date">Date & time</label>
+            <input id="event-date" type="datetime-local" name="event_date" required>
+        </div>
+
+        <div class="form-group">
+            <label for="event-location">Location</label>
+            <input id="event-location" type="text" name="location" required placeholder="Room / address">
+        </div>
+
+        <button type="submit">Create Event</button>
+
+        {% if error %}
+            <div style="color: red; margin-top: 8px;">{{ error }}</div>
+        {% endif %}
+    </form>
+</div>
 {% endblock %}

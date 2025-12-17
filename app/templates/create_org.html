@@ -1,18 +1,23 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Create Organization</h2>
-<form method="POST">
-    <div>
-        <label>Name</label>
-        <input type="text" name="name" required>
-    </div>
-    <div>
-        <label>Description</label>
-        <textarea name="description" required></textarea>
-    </div>
-    <button type="submit">Create</button>
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
-</form>
+<div class="auth-container">
+    <form class="auth-form" method="POST">
+        <h2>Create Organization</h2>
+        <div class="form-group">
+            <label for="org-name">Name</label>
+            <input id="org-name" type="text" name="name" required placeholder="Organization name">
+        </div>
+
+        <div class="form-group">
+            <label for="org-desc">Description</label>
+            <textarea id="org-desc" name="description" required placeholder="Short description"></textarea>
+        </div>
+
+        <button type="submit">Create Organization</button>
+
+        {% if error %}
+            <div style="color: red; margin-top: 8px;">{{ error }}</div>
+        {% endif %}
+    </form>
+</div>
 {% endblock %}

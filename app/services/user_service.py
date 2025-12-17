@@ -17,7 +17,7 @@ class UserService:
             # hashed. Otherwise hash the plaintext. If no password provided,
             # use a default from environment or fallback to a safe default.
             if not password:
-                default_pw = os.environ.get('SEED_DEFAULT_PASSWORD', 'ChangeMe123!')
+                default_pw = os.environ.get('SEED_DEFAULT_PASSWORD', 'pass123')
                 hashed = pbkdf2_sha256.hash(default_pw)
             else:
                 p = str(password)

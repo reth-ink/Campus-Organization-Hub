@@ -51,7 +51,7 @@ def main():
 
         # Determine and print the default password that will be used for seeded users
         # (can be overridden with SEED_DEFAULT_PASSWORD environment variable).
-        default_pw = os.environ.get('SEED_DEFAULT_PASSWORD', 'ChangeMe123!')
+        default_pw = os.environ.get('SEED_DEFAULT_PASSWORD', 'pass123')
         print(f"Using default seed password: {default_pw} (override with SEED_DEFAULT_PASSWORD)")
 
     # Prevent the app's automatic seeding (init_db) from running — this script

@@ -9,7 +9,7 @@
         <div style="display:flex; align-items:center; gap:8px;">
             <h3 style="margin:0;">{{ org.OrgName }}</h3>
             {% if is_admin %}
-                <button type="button" id="org-settings-toggle" title="Organization settings" style="border:none;background:transparent;cursor:pointer;font-size:18px; position:relative; z-index:210;" tabindex="0" aria-expanded="false" role="button" onclick="event.stopPropagation();(function(btn){var panel=document.getElementById('org-settings-panel'); if(!panel) return; var isHidden = panel.style.display==='none' || panel.style.display==='' ; panel.style.display = isHidden ? 'block' : 'none'; try{ btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false'); }catch(e){} })(this);">⚙️</button>
+                <button type="button" id="org-settings-toggle" title="Organization settings" style="border:none;background:transparent;cursor:pointer;font-size:18px; position:relative; z-index:210;" tabindex="0" aria-expanded="false" role="button" onclick="event.stopPropagation();(function(btn){var panel=document.getElementById('org-settings-panel');var backdrop=document.getElementById('org-settings-backdrop'); if(!panel) return; var isHidden = panel.style.display==='none' || panel.style.display==='' ; panel.style.display = isHidden ? 'block' : 'none'; if(backdrop) backdrop.style.display = isHidden ? 'block' : 'none'; try{ btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false'); }catch(e){} })(this);">⚙️</button>
             {% endif %}
         </div>
         <p class="muted">{{ org.OrgDescription }}</p>
@@ -81,7 +81,8 @@
 
     {% if is_admin %}
     <!-- Settings panel (hidden by default) -->
-    <div id="org-settings-panel" style="display:none; position:fixed; left:20px; top:80px; background:#fff; border:1px solid #ddd; padding:12px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); z-index:200; width:320px;">
+    <div id="org-settings-backdrop" style="display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.35); z-index:199;"></div>
+    <div id="org-settings-panel" style="display:none; position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); background:#fff; border:1px solid #ddd; padding:18px; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.18); z-index:200; width:min(90vw,480px);">
         <h4 style="margin-top:0;">Organization Settings</h4>
         <form method="post" action="{{ url_for('web.org_update_settings', org_id=org.OrgID) }}">
             <label style="font-size:0.9rem;">Name</label>
@@ -90,7 +91,7 @@
             <textarea name="org_description" style="width:100%;height:80px;padding:6px;margin:6px 0;">{{ org.OrgDescription }}</textarea>
             <div style="display:flex; gap:8px; justify-content:flex-end;">
                 <button type="submit" class="post-button">Save</button>
-                <button type="button" id="org-settings-cancel" class="post-button">Cancel</button>
+                <button type="button" id="org-settings-cancel" class="post-button" aria-label="Cancel" onclick="(function(btn){var panel=document.getElementById('org-settings-panel');var backdrop=document.getElementById('org-settings-backdrop'); if(panel) panel.style.display='none'; if(backdrop) backdrop.style.display='none'; try{ document.getElementById('org-settings-toggle').setAttribute('aria-expanded','false'); }catch(e){} })(this);">Cancel</button>
             </div>
         </form>
         <hr />
@@ -113,6 +114,21 @@
 
                 <h3 class="post-title">{{ ann.Title }}</h3>
                 <p class="post-body">{{ ann.Content }}</p>
+                {% if ann.Attachments %}
+                <div class="announcement-attachments" style="margin-top:8px;">
+                    {% for a in ann.Attachments %}
+                        {% if a.type == 'image' %}
+                            <div style="margin-bottom:8px;"><img src="{{ a.url }}" alt="attachment" style="max-width:100%;height:auto;border-radius:8px;" /></div>
+                        {% elif a.type == 'video' %}
+                            <div style="margin-bottom:8px;"><video controls style="max-width:100%;height:auto;"><source src="{{ a.url }}" type="{{ a.mimetype }}">Your browser does not support the video tag.</video></div>
+                        {% elif a.type == 'link' %}
+                            <div style="margin-bottom:6px;"><a href="{{ a.url }}" target="_blank" rel="noopener" class="event-link">{{ a.url }}</a></div>
+                        {% else %}
+                            <div style="margin-bottom:6px;"><a href="{{ a.url }}" download class="event-link">{{ a.filename or a.url }}</a></div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
                 <div class="post-meta">Posted: {{ ann.DatePosted }}{% if ann.CreatorName %} &middot; Posted by: {{ ann.CreatorName }}{% endif %}</div>
             </div>
             {% endfor %}
@@ -166,22 +182,38 @@ document.addEventListener('DOMContentLoaded', function(){
     var btn = document.getElementById('org-settings-toggle');
     var panel = document.getElementById('org-settings-panel');
     var cancel = document.getElementById('org-settings-cancel');
+    var backdrop = document.getElementById('org-settings-backdrop');
+
+    function showPanel(show){
+        if(!panel) return;
+        panel.style.display = show ? 'block' : 'none';
+        if(backdrop) backdrop.style.display = show ? 'block' : 'none';
+        try { btn.setAttribute('aria-expanded', show ? 'true' : 'false'); } catch(e){}
+    }
+
     if(btn && panel){
-        btn.addEventListener('click', function(){
+        btn.addEventListener('click', function(e){
+            e.stopPropagation();
             var isHidden = panel.style.display === 'none' || panel.style.display === '';
-            panel.style.display = isHidden ? 'block' : 'none';
-            try { btn.setAttribute('aria-expanded', isHidden ? 'true' : 'false'); } catch(e){}
+            showPanel(isHidden);
         });
     }
+
     if(cancel && panel){
-        cancel.addEventListener('click', function(){ panel.style.display='none'; try { btn.setAttribute('aria-expanded','false'); } catch(e){} });
+        cancel.addEventListener('click', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            showPanel(false);
+        });
     }
-    // close when clicking outside
-    document.addEventListener('click', function(e){
-        if(!panel) return;
-        if(e.target === btn || btn.contains(e.target) || panel.contains(e.target)) return;
-        panel.style.display = 'none';
-    });
+
+    // close when clicking backdrop
+    if(backdrop){
+        backdrop.addEventListener('click', function(){ showPanel(false); });
+    }
+
+    // close on Escape
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') showPanel(false); });
 });
 </script>
 {% endif %}
