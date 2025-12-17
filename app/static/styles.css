@@ -297,8 +297,10 @@ body {
 ------------------------------------------------------------- */
 
 .home-layout {
-    display: grid;
-    grid-template-columns: 260px 1fr 300px;
+     display: grid;
+     /* Push the left and right sidebars further out (narrower) and give the
+         announcements center much more horizontal space. */
+     grid-template-columns: 160px 3fr 160px;
     gap: 20px;
     width: 90%;
     max-width: 1400px;
@@ -307,6 +309,85 @@ body {
     margin: 0 auto;
     /* Fill the available height inside .main-content */
     height: 100%;
+}
+
+/* Home-specific feed: display announcements as a responsive multi-column grid
+   scoped under .home-layout so other pages using .feed are unaffected. */
+
+.home-layout .feed {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* reduce gap so header reserves less space above the first row */
+    gap: 8px;
+    /* Let the header row size to its content (auto). We'll give each
+       card a fixed height instead so the header doesn't take a full
+       card-row's height. */
+    grid-auto-rows: auto;
+    /* keep internal scrolling for the main-content area */
+    height: 100%;
+    overflow: auto;
+    min-width: 0;
+    align-items: start;
+}
+
+/* Keep the announcements section title visible above the grid of cards.
+   The title spans all columns and sticks to the top of the feed's scroll area. */
+.home-layout .feed .section-title {
+    grid-column: 1 / -1;
+    position: sticky;
+    top: 6px;
+    z-index: 50; /* above cards but below toasts */
+    margin: 0;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    align-self: start;
+}
+
+/* Ensure post-cards inside the home grid use full column width; make them
+   shorter and visually denser by reducing padding and clamping text. */
+.home-layout .post-card {
+    width: 100%;
+    margin-bottom: 0;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Fixed card height so grid rows for cards are consistent while
+       header row can remain auto-sized */
+    height: 200px;
+}
+
+.home-layout .post-card .post-title {
+    font-size: 1rem;
+    margin-bottom: 6px;
+}
+
+.home-layout .post-card .post-body {
+    font-size: 0.92rem;
+    color: #333;
+    /* clamp body to ~3 lines to keep cards short */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.home-layout .post-card .post-meta { margin-top: 8px; font-size: 0.8rem; }
+
+/* Responsive breakpoints for columns */
+@media (max-width: 1200px) {
+    /* medium screens: slightly narrower sidebars but keep center dominant */
+    .home-layout { grid-template-columns: 140px 2.6fr 140px; }
+    .home-layout .feed { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+    .home-layout .feed { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .home-layout .feed { grid-template-columns: 1fr; }
 }
 
 /* -------------------------------------------------------------
@@ -373,6 +454,8 @@ body {
 .feed {
     height: 100%;
     overflow: auto;
+    /* allow the grid column to shrink without forcing overflow on the whole page */
+    min-width: 0;
 }
 
 .sidebar {
@@ -578,6 +661,7 @@ body {
     flex-direction: column;
     margin-bottom: 20px;
     transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
 }
 
 .post-card:hover {
@@ -711,7 +795,8 @@ body {
 /* --------------------- RESPONSIVE --------------------- */
 @media (max-width: 1200px) {
     .home-layout {
-        grid-template-columns: 200px 1fr 200px;
+        /* On medium screens, reduce sidebar widths but keep center dominant */
+        grid-template-columns: 160px 1.4fr 180px;
     }
 }
 
