@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main-content">
+    <div style="max-width:1200px;margin:auto;">
+        <h2>Search results for "{{ query }}"</h2>
+
+        <section class="search-section">
+            <h3>Organizations ({{ results.orgs|length }})</h3>
+            {% if results.orgs %}
+                <div class="horizontal-row" tabindex="0" aria-label="Organization results">
+                    {% for o in results.orgs %}
+                        <div class="org-slide org-item">
+                            <a href="{{ url_for('web.org_detail', org_id=o.OrgID) }}" class="org-link">
+                                <strong>{{ o.OrgName }}</strong>
+                                <div style="color:#666;margin-top:6px;">{{ o.OrgDescription or '' }}</div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No organizations found.</p>
+            {% endif %}
+        </section>
+
+        <section class="search-section" style="margin-top:18px;">
+            <h3>Announcements ({{ results.announcements|length }})</h3>
+            {% if results.announcements %}
+                <div class="horizontal-row" tabindex="0" aria-label="Announcement results">
+                    {% for a in results.announcements %}
+                        <div class="event-slide post-card">
+                            <div class="post-title"><strong>{{ a.Title }}</strong></div>
+                            <div class="post-body">{{ a.Content[:200] }}{% if a.Content|length > 200 %}...{% endif %}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No announcements found.</p>
+            {% endif %}
+        </section>
+
+        <section class="search-section" style="margin-top:18px;">
+            <h3>Events ({{ results.events|length }})</h3>
+            {% if results.events %}
+                <div class="horizontal-row" tabindex="0" aria-label="Event results">
+                    {% for e in results.events %}
+                        <div class="event-slide post-card">
+                            <div class="post-title"><a href="{{ url_for('web.event_detail', event_id=e.EventID) }}"><strong>{{ e.EventName }}</strong></a></div>
+                            <div class="post-body">{{ e.EventDescription or '' }}</div>
+                            <div class="post-meta">{{ e.EventDate or '' }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No events found.</p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

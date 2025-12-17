@@ -1,4 +1,5 @@
 import csv
+import sqlite3
 from flask import current_app
 from ..database import get_db
 from ..models.membership import Membership
@@ -15,8 +16,12 @@ class MembershipService:
                 (user_id, organization_id, status, None, None)
             )
             db.commit()
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while creating membership')
+            raise AppError('DB_ERROR', 'Could not create membership', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not create membership: {str(e)}')
+            current_app.logger.exception('Unexpected error while creating membership')
+            raise AppError('DB_ERROR', 'Could not create membership', original_exception=e)
 
     @staticmethod
     def get_all_memberships():
@@ -47,19 +52,34 @@ class MembershipService:
                 # other statuses (e.g., Pending) - just update status and clear DateApproved
                 db.execute('UPDATE memberships SET Status = ?, DateApproved = NULL WHERE MembershipID = ?', (status, membership_id))
             db.commit()
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while updating membership status')
+            raise AppError('DB_ERROR', 'Could not update membership status', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not update membership status: {str(e)}')
+            current_app.logger.exception('Unexpected error while updating membership status')
+            raise AppError('DB_ERROR', 'Could not update membership status', original_exception=e)
 
     @staticmethod
     def import_memberships_from_csv(file_path):
         try:
             with open(file_path, newline='') as csvfile:
                 reader = csv.DictReader(csvfile)
-                for m in reader:
-                    user = m.get('UserID') or m.get('user_id')
-                    org = m.get('OrgID') or m.get('organization_id')
-                    status = m.get('Status') or m.get('status')
+                # normalize rows using a small lambda mapping to demonstrate lambda usage
+                transform = lambda r: (
+                    r.get('UserID') or r.get('user_id'),
+                    r.get('OrgID') or r.get('organization_id'),
+                    r.get('Status') or r.get('status')
+                )
+                for user, org, status in map(transform, reader):
                     # DateApplied/DateApproved are available in CSV but create_membership currently sets None
-                    MembershipService.create_membership(user, org, status)
+                    try:
+                        MembershipService.create_membership(user, org, status)
+                    except AppError:
+                        current_app.logger.exception('Failed to create membership from CSV row, continuing')
+                        continue
+        except (csv.Error, OSError) as e:
+            current_app.logger.exception('Error reading memberships CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)
         except Exception as e:
-            raise AppError('CSV_IMPORT_ERROR', f'Error importing CSV: {str(e)}')
+            current_app.logger.exception('Unexpected error importing memberships from CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)

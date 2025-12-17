@@ -1,4 +1,6 @@
 import csv
+import json
+import sqlite3
 from flask import current_app
 from ..database import get_db
 from ..models.announcement import Announcement
@@ -10,12 +12,12 @@ class AnnouncementService:
     def create_announcement(org_id, created_by, title, content, date_posted, attachments=None):
         db = get_db()
         try:
-            import json
             att_val = None
             if attachments:
                 try:
                     att_val = json.dumps(attachments)
-                except Exception:
+                except (TypeError, ValueError) as e:
+                    current_app.logger.debug('Invalid attachments value; storing as NULL: %s', e)
                     att_val = None
 
             # If date_posted is None, omit the DatePosted column so the
@@ -32,8 +34,12 @@ class AnnouncementService:
                     (org_id, created_by, title, content, date_posted, att_val)
                 )
             db.commit()
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while creating announcement')
+            raise AppError('DB_ERROR', 'Could not create announcement', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not create announcement: {str(e)}')
+            current_app.logger.exception('Unexpected error while creating announcement')
+            raise AppError('DB_ERROR', 'Could not create announcement', original_exception=e)
 
     @staticmethod
     def get_all_announcements():
@@ -49,6 +55,9 @@ class AnnouncementService:
             if att and isinstance(att, str):
                 try:
                     d['Attachments'] = json.loads(att)
+                except json.JSONDecodeError as e:
+                    current_app.logger.debug('Failed to parse attachments JSON: %s', e)
+                    d['Attachments'] = None
                 except Exception:
                     d['Attachments'] = None
             out.append(Announcement(**d).to_dict())
@@ -65,6 +74,14 @@ class AnnouncementService:
                     title = a.get('Title') or a.get('title')
                     content = a.get('Content') or a.get('content')
                     date_posted = a.get('DatePosted') or a.get('date_posted')
-                    AnnouncementService.create_announcement(org, created_by, title, content, date_posted)
+                    try:
+                        AnnouncementService.create_announcement(org, created_by, title, content, date_posted)
+                    except AppError:
+                        current_app.logger.exception('Failed to create announcement from CSV row, continuing')
+                        continue
+        except (csv.Error, OSError) as e:
+            current_app.logger.exception('Error reading announcements CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)
         except Exception as e:
-            raise AppError('CSV_IMPORT_ERROR', f'Error importing CSV: {str(e)}')
+            current_app.logger.exception('Unexpected error importing announcements from CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)

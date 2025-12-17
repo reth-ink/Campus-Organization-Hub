@@ -39,13 +39,15 @@
         {% endif %}
 
             <div style="margin-top:14px; display:flex; flex-direction:column; gap:8px;">
-                {% if is_officer %}
-                    <a href="{{ url_for('web.create_announcement', org_id=org.OrgID) }}" class="post-button">Create Announcement</a>
-                    <a href="{{ url_for('web.create_event', org_id=org.OrgID) }}" class="post-button">Create Event</a>
+                {% set any_allowed = (can_post_announcements or can_create_events) %}
+                {% if any_allowed %}
+                    {% if can_post_announcements %}
+                        <a href="{{ url_for('web.create_announcement', org_id=org.OrgID) }}" class="post-button">Create Announcement</a>
+                    {% endif %}
+                    {% if can_create_events %}
+                        <a href="{{ url_for('web.create_event', org_id=org.OrgID) }}" class="post-button">Create Event</a>
+                    {% endif %}
                 {% else %}
-                    <!-- Show the same interface but disable actions for non-admins/members -->
-                    <a class="post-button btn-disabled" title="Only organization admins may post announcements">Create Announcement</a>
-                    <a class="post-button btn-disabled" title="Only organization admins may create events">Create Event</a>
                     <div style="font-size:0.9rem;color:#666;margin-top:6px;">You are viewing this organization's page. To participate or get admin privileges, request membership or ask an existing admin to assign roles.</div>
                 {% endif %}
             </div>
@@ -157,9 +159,11 @@
             <div class="upcoming-panel" style="max-height:260px; overflow:auto; padding:6px; border:1px solid #eee; border-radius:6px;">
             {% if events %}
                 {% for ev in events[:5] %}
-                <div class="event-item" style="padding:6px; border-bottom:1px solid #f2f2f2;">
-                    <a class="event-link" href="{{ url_for('web.event_detail', event_id=ev.EventID) }}">{{ ev.EventName }}</a>
-                    <div class="event-time">{{ ev.EventDate }}</div>
+                <div class="event-item" style="padding:0; border-bottom:1px solid #f2f2f2;">
+                    <a href="{{ url_for('web.event_detail', event_id=ev.EventID) }}" class="event-link event-card-link" style="display:block;padding:6px;">
+                        <div class="event-title">{{ ev.EventName }}</div>
+                        <div class="event-time">{{ ev.EventDate }}</div>
+                    </a>
                 </div>
                 {% endfor %}
             {% else %}

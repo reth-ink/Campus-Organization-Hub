@@ -14,6 +14,12 @@ def get_db():
             db_path = os.environ.get('DATABASE') or 'campus_hub.db'
         g.db = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row
+        try:
+            # Ensure SQLite enforces foreign key constraints (ON DELETE CASCADE)
+            g.db.execute('PRAGMA foreign_keys = ON')
+        except Exception:
+            # Not critical; continue without failing app startup
+            pass
     return g.db
 
 def close_db(e=None):
@@ -91,9 +97,14 @@ def init_db(app):
                 )
                 ''')
                 db.commit()
-        except Exception:
+        except Exception as e:
             # If schema application fails, continue — app startup shouldn't be blocked
-            pass
+            # but log the problem so the developer can diagnose schema issues
+            try:
+                app.logger.exception('Failed to apply SQL schema during init_db')
+            except Exception:
+                # app.logger may not be available in some contexts; fall back to printing
+                import traceback; traceback.print_exc()
         # Attempt to seed data from CSV files in the repository's data/ folder
         # Import service modules here to avoid circular imports at module import time
         # Allow skipping automatic seeding by setting SKIP_AUTO_SEED in the environment
@@ -113,7 +124,11 @@ def init_db(app):
                     try:
                         row = db.execute(f"SELECT COUNT(*) as cnt FROM {table_name}").fetchone()
                         return int(row['cnt']) if row is not None else 0
-                    except Exception:
+                    except Exception as e:
+                        try:
+                            app.logger.debug('table_count error for %s: %s', table_name, e)
+                        except Exception:
+                            pass
                         return 0
 
                 # Only import when the table is empty and the CSV file exists
@@ -122,51 +137,53 @@ def init_db(app):
                     if os.path.exists(org_csv):
                         try:
                             OrgService.import_organizations_from_csv(org_csv)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            app.logger.exception('Failed to import organizations from CSV')
 
                 if table_count('users') == 0:
                     users_csv = os.path.join(data_dir, 'users.csv')
                     if os.path.exists(users_csv):
                         try:
                             UserService.import_users_from_csv(users_csv)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            app.logger.exception('Failed to import users from CSV')
 
                 if table_count('events') == 0:
                     events_csv = os.path.join(data_dir, 'events.csv')
                     if os.path.exists(events_csv):
                         try:
                             EventService.import_events_from_csv(events_csv)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            app.logger.exception('Failed to import events from CSV')
 
                 if table_count('announcements') == 0:
                     ann_csv = os.path.join(data_dir, 'announcements.csv')
                     if os.path.exists(ann_csv):
                         try:
                             AnnouncementService.import_announcements_from_csv(ann_csv)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            app.logger.exception('Failed to import announcements from CSV')
 
                 if table_count('memberships') == 0:
                     mem_csv = os.path.join(data_dir, 'membership.csv')
                     if os.path.exists(mem_csv):
                         try:
                             MembershipService.import_memberships_from_csv(mem_csv)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            app.logger.exception('Failed to import memberships from CSV')
 
                 if table_count('officer_roles') == 0:
                     officers_csv = os.path.join(data_dir, 'officer_roles.csv')
                     if os.path.exists(officers_csv):
                         try:
                             OfficerRoleService.import_officer_roles_from_csv(officers_csv)
-                        except Exception:
-                            pass
-            except Exception:
-                # If seeding fails, don't prevent the app from starting — seeding is best-effort
-                pass
+                        except Exception as e:
+                            app.logger.exception('Failed to import officer_roles from CSV')
+            except Exception as e:
+                try:
+                    app.logger.exception('Automatic seeding failed during init_db')
+                except Exception:
+                    import traceback; traceback.print_exc()
 
         app.teardown_appcontext(close_db)
 

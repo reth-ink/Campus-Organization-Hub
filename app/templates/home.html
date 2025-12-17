@@ -10,7 +10,7 @@
         <ul class="joined-orgs">
             {% for org in joined_orgs %}
             <li class="org-item">
-                <a href="{{ url_for('web.org_detail', org_id=org.OrgID) }}" class="event-link">{{ org.OrgName }}</a>
+                <a href="{{ url_for('web.org_detail', org_id=org.OrgID) }}" class="event-link org-link">{{ org.OrgName }}</a>
             </li>
             {% endfor %}
         </ul>
@@ -69,8 +69,10 @@
             {% if events %}
                 {% for event in events[:5] %}
                 <div class="event-item">
-                    <a class="event-link" href="{{ url_for('web.event_detail', event_id=event.EventID) }}">{{ event.EventName }}</a>
-                    <div class="event-time">{{ event.EventDate }}</div>
+                    <a href="{{ url_for('web.event_detail', event_id=event.EventID) }}" class="event-link event-card-link">
+                        <div class="event-title">{{ event.EventName }}</div>
+                        <div class="event-time">{{ event.EventDate }}</div>
+                    </a>
                 </div>
                 {% endfor %}
             {% else %}
@@ -87,8 +89,8 @@
             <h3 class="sidebar-title">Organizations</h3>
             {% for org in orgs %}
             <div class="event-item">
-                <a class="event-link" href="{{ url_for('web.org_detail', org_id=org.OrgID) }}">
-                    {{ org.OrgName }}
+                <a href="{{ url_for('web.org_detail', org_id=org.OrgID) }}" class="event-link org-link">
+                    <div class="event-title">{{ org.OrgName }}</div>
                 </a>
             </div>
             {% endfor %}

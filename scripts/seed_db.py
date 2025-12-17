@@ -71,12 +71,17 @@ def main():
 
         errors = []
 
+        # Import order matters because of FOREIGN KEY constraints:
+        # - memberships reference users and organizations
+        # - officer_roles reference memberships
+        # - events and announcements reference officer_roles and organizations
+        # Therefore import in this order: organizations, users, memberships, officer_roles, events, announcements
         run_import(OrgService, 'import_organizations_from_csv', os.path.join(data_dir, 'organizations.csv'), errors)
         run_import(UserService, 'import_users_from_csv', os.path.join(data_dir, 'users.csv'), errors)
-        run_import(EventService, 'import_events_from_csv', os.path.join(data_dir, 'events.csv'), errors)
-        run_import(AnnouncementService, 'import_announcements_from_csv', os.path.join(data_dir, 'announcements.csv'), errors)
         run_import(MembershipService, 'import_memberships_from_csv', os.path.join(data_dir, 'membership.csv'), errors)
         run_import(OfficerRoleService, 'import_officer_roles_from_csv', os.path.join(data_dir, 'officer_roles.csv'), errors)
+        run_import(EventService, 'import_events_from_csv', os.path.join(data_dir, 'events.csv'), errors)
+        run_import(AnnouncementService, 'import_announcements_from_csv', os.path.join(data_dir, 'announcements.csv'), errors)
 
         db = get_db()
         tables = ['organizations', 'users', 'events', 'announcements', 'memberships', 'officer_roles']

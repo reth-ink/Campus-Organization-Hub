@@ -11,10 +11,17 @@
 <!-- NAVBAR -->
 <nav class="navbar">
     <div class="nav-left">
-        <a href="{{ url_for('web.home') }}" class="brand">Campus Hub</a>
+        <a href="{{ url_for('web.home') }}" class="brand">
+            <img src="{{ url_for('static', filename='helmetlayer.png') }}" alt="helmet" class="brand-logo"/>
+            <span class="brand-text">Campus Hub</span>
+        </a>
     </div>
 
     <div class="nav-right">
+        <form action="{{ url_for('web.search') }}" method="get" class="search-form">
+            <input type="search" name="q" placeholder="Search organizations, announcements, events..." class="search-input" aria-label="Search">
+            <button type="submit" class="search-button">Search</button>
+        </form>
         {% if current_user %}
             <a href="{{ url_for('web.create_org') }}" class="nav-link">Create Organization</a>
             <a href="{{ url_for('web.profile') }}" class="nav-link">{{ current_user.FirstName }} {{ current_user.LastName }}</a>
@@ -28,19 +35,72 @@
 
 <!-- MAIN CONTENT -->
 <div class="main-content">
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div style="max-width:90vw;margin:10px auto;">
-                {% for msg in messages %}
-                    <div class="post-card" style="background:#fff8e1;border-left:4px solid #f0c000;">{{ msg }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-
     {% block content %}{% endblock %}
 </div>
 
 <script src="{{ url_for('static', filename='eyes.js') }}"></script>
+
+<!-- Toast container for flashed messages (lower-right, overlays other panels) -->
+<div id="toast-container" aria-live="polite" aria-atomic="true" class="toast-container">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="toast" role="status">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Generic wheel->horizontal scroll handler for any .horizontal-row
+    function normalizeDelta(e){ return e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; }
+
+    document.querySelectorAll('.horizontal-row').forEach(function(row){
+        if(!row) return;
+
+        let pointerOver = false;
+        row.addEventListener('pointerenter', () => { pointerOver = true; });
+        row.addEventListener('pointerleave', () => { pointerOver = false; });
+
+        function handleWheel(e){
+            if(e.ctrlKey || e.metaKey) return;
+            const deltaY = normalizeDelta(e);
+            if(Math.abs(deltaY) > Math.abs(e.deltaX)){
+                e.preventDefault();
+                row.scrollBy({ left: deltaY, behavior: 'smooth' });
+            }
+        }
+
+        row.addEventListener('wheel', handleWheel, { passive: false });
+        document.addEventListener('wheel', function(e){ if(pointerOver) handleWheel(e); }, { passive: false });
+    });
+
+    // Toast auto-hide behavior: fade and remove
+    const toasts = document.querySelectorAll('#toast-container .toast');
+    toasts.forEach(function(t){
+        // show class in case we want an entrance animation later
+        t.classList.add('show');
+
+        // auto-hide after 3.5s
+        const hideDelay = 3500;
+        const removeAfter = hideDelay + 600; // allow transition time
+
+        let hideTimeout = setTimeout(() => t.classList.add('hide'), hideDelay);
+
+        // remove from DOM after transition
+        t.addEventListener('transitionend', function(ev){
+            if(t.classList.contains('hide')) t.remove();
+        });
+
+        // pause hide on mouseenter, resume on leave
+        t.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+        t.addEventListener('mouseleave', () => {
+            hideTimeout = setTimeout(() => t.classList.add('hide'), 1200);
+        });
+    });
+});
+</script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

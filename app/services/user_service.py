@@ -1,5 +1,6 @@
 import csv
 import os
+import sqlite3
 from flask import current_app
 from ..database import get_db
 from ..models.user import User
@@ -33,8 +34,12 @@ class UserService:
                 (first_name, last_name, email, hashed)
             )
             db.commit()
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while creating user')
+            raise AppError('DB_ERROR', 'Could not create user', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not create user: {str(e)}')
+            current_app.logger.exception('Unexpected error while creating user')
+            raise AppError('DB_ERROR', 'Could not create user', original_exception=e)
 
     @staticmethod
     def get_all_users():
@@ -62,7 +67,8 @@ class UserService:
     def verify_password(plain_password, password_hash):
         try:
             return pbkdf2_sha256.verify(str(plain_password), password_hash)
-        except Exception:
+        except Exception as e:
+            current_app.logger.debug('Password verification failed: %s', e)
             return False
 
     @staticmethod
@@ -76,6 +82,14 @@ class UserService:
                     email = u.get('Email') or u.get('email')
                     # CSV may include a pre-hashed PasswordHash or a plaintext 'password'
                     password = u.get('PasswordHash') or u.get('password') or None
-                    UserService.create_user(first, last, email, password)
+                    try:
+                        UserService.create_user(first, last, email, password)
+                    except AppError:
+                        current_app.logger.exception('Failed to create user from CSV row, continuing')
+                        continue
+        except (csv.Error, OSError) as e:
+            current_app.logger.exception('Error reading users CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)
         except Exception as e:
-            raise AppError('CSV_IMPORT_ERROR', f'Error importing CSV: {str(e)}')
+            current_app.logger.exception('Unexpected error importing users from CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)

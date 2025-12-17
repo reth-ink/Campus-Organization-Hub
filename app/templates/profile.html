@@ -1,14 +1,75 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="auth-container">
-    <h2>Profile</h2>
-    {% if user %}
-        <p><strong>Name:</strong> {{ user.FirstName }} {{ user.LastName }}</p>
-        <p><strong>Email:</strong> {{ user.Email }}</p>
-        <p><strong>Joined:</strong> {{ user.created_at }}</p>
-    {% else %}
-        <p>User not found.</p>
-    {% endif %}
+<div class="profile-page" style="padding: 3vh 5vw;">
+    <div class="profile-header">
+        <div class="profile-avatar">
+            {% if user and user.FirstName %}
+                <div class="avatar-circle">{{ (user.FirstName[:1] + (user.LastName[:1] if user.LastName else ''))|upper }}</div>
+            {% else %}
+                <div class="avatar-circle">?</div>
+            {% endif %}
+        </div>
+        <div class="profile-meta">
+            <h2 class="profile-name">{{ user.FirstName }} {{ user.LastName }}</h2>
+            <p class="profile-email">{{ user.Email }}</p>
+            <p class="profile-joined">Joined: {{ user.created_at or user.Joined or '' }}</p>
+        </div>
+        <div class="profile-actions">
+            <a href="{{ url_for('web.home') }}" class="post-button">Back to home</a>
+        </div>
+    </div>
+
+    <div class="profile-layout">
+        <aside class="left-sidebar">
+            <div class="sidebar-box">
+                <h3>My Organizations</h3>
+                <ul class="joined-orgs">
+                    {% if user_orgs %}
+                        {% for uo in user_orgs %}
+                            <li class="org-item">
+                                <a href="{{ url_for('web.org_detail', org_id=uo.org.OrgID) if uo.org else '#' }}" class="org-link">
+                                    <strong>{{ uo.org.OrgName if uo.org else 'Unknown Org' }}</strong>
+                                    <div style="font-size:0.9rem;color:#666;margin-top:4px;">Status: {{ uo.membership.Status }}</div>
+                                    {% if uo.roles and uo.roles|length > 0 %}
+                                        <div style="margin-top:6px; font-size:0.85rem; color: var(--primary-color);">Roles: {{ uo.roles | join(', ') }}</div>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li>No organizations yet.</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </aside>
+
+        <main class="feed">
+            <div class="post-card">
+                <h3>Activity</h3>
+                <p>Announcements created: <strong>{{ announcement_count }}</strong></p>
+                <p>Quick actions:</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                    {% if can_post_announcements %}
+                        <a class="post-button" href="{{ url_for('web.home') }}">Create Announcement</a>
+                    {% endif %}
+                    {% if can_create_events %}
+                        <a class="post-button" href="{{ url_for('web.events') }}">Create Event</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- About card removed per request -->
+        </main>
+
+        <aside class="sidebar">
+            <div class="sidebar-box">
+                <h3>Account</h3>
+                <p><strong>Email:</strong> {{ user.Email }}</p>
+                <p><strong>User ID:</strong> {{ user.UserID }}</p>
+            </div>
+        </aside>
+    </div>
 </div>
+
 {% endblock %}

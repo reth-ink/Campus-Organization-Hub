@@ -1,4 +1,5 @@
 import csv
+import sqlite3
 from flask import current_app
 from ..database import get_db
 from ..models.organization import Organization
@@ -23,8 +24,12 @@ class OrgService:
                 row = db.execute('SELECT OrgID FROM organizations WHERE OrgName = ? LIMIT 1', (org_name,)).fetchone()
                 org_id = row['OrgID'] if row else None
             return org_id
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while creating organization')
+            raise AppError('DB_ERROR', 'Could not create organization', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not create organization: {str(e)}')
+            current_app.logger.exception('Unexpected error while creating organization')
+            raise AppError('DB_ERROR', 'Could not create organization', original_exception=e)
 
     @staticmethod
     def get_all_organizations():
@@ -38,8 +43,11 @@ class OrgService:
         # while keeping behavior backwards-compatible.
         try:
             orgs_sorted = sorted(orgs, key=lambda o: (o.get('OrgName') or '').lower())
-        except Exception:
-            # fallback: if any unexpected structure, return unsorted list
+        except (TypeError, AttributeError, KeyError) as e:
+            current_app.logger.debug('Could not sort organizations: %s', e)
+            orgs_sorted = orgs
+        except Exception as e:
+            current_app.logger.exception('Unexpected error when sorting organizations')
             orgs_sorted = orgs
 
         return orgs_sorted
@@ -53,9 +61,17 @@ class OrgService:
                     # support CSV headers that use PascalCase (OrgName) or lowercase (name)
                     name = o.get('OrgName') or o.get('name')
                     desc = o.get('OrgDescription') or o.get('description')
-                    OrgService.create_organization(name, desc)
+                    try:
+                        OrgService.create_organization(name, desc)
+                    except AppError:
+                        current_app.logger.exception('Failed to create organization from CSV row, continuing')
+                        continue
+        except (csv.Error, OSError) as e:
+            current_app.logger.exception('Error reading organizations CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)
         except Exception as e:
-            raise AppError('CSV_IMPORT_ERROR', f'Error importing CSV: {str(e)}')
+            current_app.logger.exception('Unexpected error importing organizations from CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)
 
     @staticmethod
     def update_organization(org_id, name=None, description=None):
@@ -72,15 +88,51 @@ class OrgService:
             else:
                 return
             db.commit()
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while updating organization')
+            raise AppError('DB_ERROR', 'Could not update organization', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not update organization: {str(e)}')
+            current_app.logger.exception('Unexpected error while updating organization')
+            raise AppError('DB_ERROR', 'Could not update organization', original_exception=e)
 
     @staticmethod
     def delete_organization(org_id):
-        """Delete an organization and rely on ON DELETE CASCADE for related rows."""
+        """Delete an organization and remove related rows explicitly.
+
+        Some SQLite setups may not have foreign key enforcement enabled, or the
+        schema may have been created without ON DELETE CASCADE. To be robust we
+        explicitly remove dependent rows in the right order:
+
+        1. announcements (reference OrgID, may reference officer_roles)
+        2. events (reference OrgID, may reference officer_roles)
+        3. officer_roles (referencing memberships)
+        4. memberships (referencing organizations)
+        5. organizations
+
+        This avoids foreign key constraint errors and ensures connected data is
+        cleaned up when an organization is deleted.
+        """
         db = get_db()
         try:
+            # Remove announcements and events tied to the organization first
+            db.execute('DELETE FROM announcements WHERE OrgID = ?', (org_id,))
+            db.execute('DELETE FROM events WHERE OrgID = ?', (org_id,))
+
+            # Remove officer roles that belong to memberships for this org
+            db.execute(
+                'DELETE FROM officer_roles WHERE MembershipID IN (SELECT MembershipID FROM memberships WHERE OrgID = ?)',
+                (org_id,)
+            )
+
+            # Remove memberships (this will orphan nothing since officer_roles are removed)
+            db.execute('DELETE FROM memberships WHERE OrgID = ?', (org_id,))
+
+            # Finally remove the organization itself
             db.execute('DELETE FROM organizations WHERE OrgID = ?', (org_id,))
             db.commit()
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while deleting organization')
+            raise AppError('DB_ERROR', 'Could not delete organization', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not delete organization: {str(e)}')
+            current_app.logger.exception('Unexpected error while deleting organization')
+            raise AppError('DB_ERROR', 'Could not delete organization', original_exception=e)

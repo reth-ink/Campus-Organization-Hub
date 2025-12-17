@@ -1,4 +1,5 @@
 import csv
+import sqlite3
 from flask import current_app
 from ..database import get_db
 from ..models.officer_role import OfficerRole
@@ -16,8 +17,12 @@ class OfficerRoleService:
                 (None, name, None, None, int(bool(permissions.get('can_post_announcements'))), int(bool(permissions.get('can_create_events'))), int(bool(permissions.get('can_approve_members'))), int(bool(permissions.get('can_assign_roles'))))
             )
             db.commit()
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while creating officer role')
+            raise AppError('DB_ERROR', 'Could not create officer role', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not create officer role: {str(e)}')
+            current_app.logger.exception('Unexpected error while creating officer role')
+            raise AppError('DB_ERROR', 'Could not create officer role', original_exception=e)
 
     @staticmethod
     def get_all_officer_roles():
@@ -27,8 +32,12 @@ class OfficerRoleService:
             rows = db.execute(
                 'SELECT OfficerRoleID, MembershipID, RoleName, StartDate, EndDate, can_post_announcements, can_create_events, can_approve_members, can_assign_roles FROM officer_roles'
             ).fetchall()
-        except Exception:
+        except sqlite3.DatabaseError as e:
+            current_app.logger.debug('Permission columns missing or DB error when querying officer_roles: %s', e)
             # older DB schema: permission columns may not exist yet
+            rows = db.execute('SELECT OfficerRoleID, MembershipID, RoleName, StartDate, EndDate FROM officer_roles').fetchall()
+        except Exception as e:
+            current_app.logger.exception('Unexpected error retrieving officer roles')
             rows = db.execute('SELECT OfficerRoleID, MembershipID, RoleName, StartDate, EndDate FROM officer_roles').fetchall()
 
         return [OfficerRole(**dict(row)).to_dict() for row in rows]
@@ -49,10 +58,18 @@ class OfficerRoleService:
                         db.execute('INSERT OR IGNORE INTO officer_roles (OfficerRoleID, MembershipID, RoleName, StartDate, EndDate, can_post_announcements, can_create_events, can_approve_members, can_assign_roles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
                                    (r.get('OfficerRoleID'), membership, role_name, role_start, role_end, r.get('can_post_announcements') or 0, r.get('can_create_events') or 0, r.get('can_approve_members') or 0, r.get('can_assign_roles') or 0))
                         db.commit()
+                    except sqlite3.DatabaseError as e:
+                        current_app.logger.exception('Database error while creating officer role from CSV')
+                        raise AppError('DB_ERROR', 'Could not create officer role from CSV', original_exception=e)
                     except Exception as e:
-                        raise AppError('DB_ERROR', f'Could not create officer role from CSV: {str(e)}')
+                        current_app.logger.exception('Unexpected error while creating officer role from CSV')
+                        raise AppError('DB_ERROR', 'Could not create officer role from CSV', original_exception=e)
+        except (csv.Error, OSError) as e:
+            current_app.logger.exception('Error reading officer_roles CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)
         except Exception as e:
-            raise AppError('CSV_IMPORT_ERROR', f'Error importing CSV: {str(e)}')
+            current_app.logger.exception('Unexpected error importing officer_roles from CSV')
+            raise AppError('CSV_IMPORT_ERROR', 'Error importing CSV', original_exception=e)
 
     @staticmethod
     def get_or_create_officer_role_for_user(org_id, user_id, role_name='Creator'):
@@ -91,8 +108,12 @@ class OfficerRoleService:
                               (membership_id, role_name, None, None, 1, 1, 1, 1))
             db.commit()
             return cur2.lastrowid
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error in get_or_create_officer_role_for_user')
+            raise AppError('DB_ERROR', 'Could not map user to officer role', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not map user to officer role: {str(e)}')
+            current_app.logger.exception('Unexpected error in get_or_create_officer_role_for_user')
+            raise AppError('DB_ERROR', 'Could not map user to officer role', original_exception=e)
 
     @staticmethod
     def assign_role_to_membership(membership_id, role_name, permissions=None):
@@ -104,8 +125,12 @@ class OfficerRoleService:
                              (membership_id, role_name, None, None, int(bool(perms.get('can_post_announcements'))), int(bool(perms.get('can_create_events'))), int(bool(perms.get('can_approve_members'))), int(bool(perms.get('can_assign_roles')))))
             db.commit()
             return cur.lastrowid
+        except sqlite3.DatabaseError as e:
+            current_app.logger.exception('Database error while assigning role to membership')
+            raise AppError('DB_ERROR', 'Could not assign role to membership', original_exception=e)
         except Exception as e:
-            raise AppError('DB_ERROR', f'Could not assign role to membership: {str(e)}')
+            current_app.logger.exception('Unexpected error while assigning role to membership')
+            raise AppError('DB_ERROR', 'Could not assign role to membership', original_exception=e)
 
     @staticmethod
     def user_permissions_for_org(org_id, user_id):
@@ -113,8 +138,11 @@ class OfficerRoleService:
         db = get_db()
         try:
             mem = db.execute('SELECT MembershipID, Status FROM memberships WHERE USERID = ? AND OrgID = ? LIMIT 1', (user_id, org_id)).fetchone()
-        except Exception:
-            # fallback for unexpected DB schema or errors — deny permissions
+        except sqlite3.DatabaseError as e:
+            current_app.logger.debug('DB error while fetching membership in user_permissions_for_org: %s', e)
+            return {'can_post_announcements': 0, 'can_create_events': 0, 'can_approve_members': 0, 'can_assign_roles': 0}
+        except Exception as e:
+            current_app.logger.exception('Unexpected error while fetching membership in user_permissions_for_org')
             return {'can_post_announcements': 0, 'can_create_events': 0, 'can_approve_members': 0, 'can_assign_roles': 0}
         # sqlite3.Row does not implement .get(), convert to dict for safe access
         if mem:
@@ -127,8 +155,11 @@ class OfficerRoleService:
         try:
             # include RoleName so we can detect explicit 'Admin' roles
             rows = db.execute('SELECT RoleName, can_post_announcements, can_create_events, can_approve_members, can_assign_roles FROM officer_roles WHERE MembershipID = ?', (membership_id,)).fetchall()
-        except Exception:
-            # permission columns not present — deny by default
+        except sqlite3.DatabaseError as e:
+            current_app.logger.debug('DB error while fetching officer roles in user_permissions_for_org: %s', e)
+            return {'can_post_announcements': 0, 'can_create_events': 0, 'can_approve_members': 0, 'can_assign_roles': 0}
+        except Exception as e:
+            current_app.logger.exception('Unexpected error while fetching officer roles in user_permissions_for_org')
             return {'can_post_announcements': 0, 'can_create_events': 0, 'can_approve_members': 0, 'can_assign_roles': 0}
 
         # aggregate permissions (if any role grants a permission, user has it)
@@ -162,16 +193,21 @@ class OfficerRoleService:
                    JOIN users u ON u.UserID = m.UserID
                    WHERE m.OrgID = ? AND LOWER(orf.RoleName) != 'member' ''', (org_id,)
             ).fetchall()
-        except Exception:
+        except sqlite3.DatabaseError as e:
             # fallback: if permission columns missing or join fails, attempt a simpler join
+            current_app.logger.debug('DB error in complex officer join, attempting simpler join: %s', e)
             try:
                 # fallback simpler join: still exclude rows with RoleName 'Member'
                 rows = db.execute(
                     "SELECT orf.OfficerRoleID, orf.MembershipID, orf.RoleName, m.UserID as UserID, m.OrgID as OrgID, u.FirstName as FirstName, u.LastName as LastName FROM officer_roles orf JOIN memberships m ON m.MembershipID = orf.MembershipID JOIN users u ON u.UserID = m.UserID WHERE m.OrgID = ? AND LOWER(orf.RoleName) != 'member'",
                     (org_id,)
                 ).fetchall()
-            except Exception:
+            except Exception as e:
+                current_app.logger.exception('Simpler officer join failed')
                 return []
+        except Exception as e:
+            current_app.logger.exception('Unexpected error retrieving officers by org')
+            return []
 
         officers = []
         for r in rows:
@@ -179,7 +215,8 @@ class OfficerRoleService:
             rd = dict(r)
             try:
                 user_name = f"{rd.get('FirstName')} {rd.get('LastName')}"
-            except Exception:
+            except Exception as e:
+                current_app.logger.debug('Failed to build user_name for officer row: %s', e)
                 user_name = 'Unknown'
             role_name_val = (rd.get('RoleName') or rd.get('role_name') or '')
             is_admin_role = isinstance(role_name_val, str) and role_name_val.lower() == 'admin'
@@ -210,5 +247,6 @@ class OfficerRoleService:
                 (officer_role_id,)
             ).fetchone()
             return dict(row) if row is not None else None
-        except Exception:
+        except Exception as e:
+            current_app.logger.debug('Error resolving user by officer role: %s', e)
             return None

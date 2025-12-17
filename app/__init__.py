@@ -16,6 +16,18 @@ def create_app(config: dict = None):
     import os
     app.secret_key = os.environ.get('FLASK_SECRET', 'dev-secret')
 
+    # Basic logging configuration so exceptions and AppError logs are visible
+    import logging
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s'))
+    # ensure app.logger has at least one handler
+    if not app.logger.handlers:
+        app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+    # also configure the package-level logger used by AppError
+    logging.getLogger('campus_hub').handlers = app.logger.handlers
+    logging.getLogger('campus_hub').setLevel(app.logger.level)
+
     init_db(app)
 
     app.register_blueprint(user_routes.bp)
@@ -36,7 +48,8 @@ def create_app(config: dict = None):
             from .services.user_service import UserService
             user = UserService.get_user_row_by_id(user_id)
             return {'current_user': user}
-        except Exception:
+        except Exception as e:
+            app.logger.exception('Error resolving current_user for template context')
             return {'current_user': None}
 
     @app.errorhandler(AppError)

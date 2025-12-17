@@ -57,7 +57,8 @@ def home():
     # show newest announcements first (DatePosted or created_at)
     try:
         announcements = sorted(announcements, key=lambda a: a.get('DatePosted') or a.get('created_at') or '', reverse=True)
-    except Exception:
+    except Exception as e:
+        current_app.logger.exception('Failed to sort announcements in home')
         # fallback: leave order unchanged
         pass
 
@@ -88,7 +89,9 @@ def home():
                     org = org_map.get(int(m.get('OrgID')))
                     if org and org not in joined:
                         joined.append(org)
-            except Exception:
+            except Exception as e:
+                # non-fatal per-row problem; log and continue
+                current_app.logger.debug('Skipping membership row while building joined orgs: %s', e)
                 continue
 
     return render_template('home.html', joined_orgs=joined, announcements=announcements, events=events, orgs=orgs)
@@ -125,7 +128,8 @@ def org_detail(org_id):
     announcements = [a for a in AnnouncementService.get_all_announcements() if int(a.get('OrgID') or 0) == org_id]
     try:
         announcements = sorted(announcements, key=lambda a: a.get('DatePosted') or a.get('created_at') or '', reverse=True)
-    except Exception:
+    except Exception as e:
+        current_app.logger.exception('Failed to sort announcements in org_detail')
         pass
     events = [e for e in EventService.get_all_events() if int(e.get('OrgID') or 0) == org_id]
 
@@ -160,14 +164,15 @@ def org_detail(org_id):
         uid = session.get('user_id')
         # mark is_officer true if any officer entry's UserID equals uid and role grants admin-ish permissions
         for o in officers:
-            try:
-                if int(o.get('UserID') or 0) == int(uid):
-                    # if they have any of the admin permissions, treat as officer
-                    if o.get('can_approve_members') or o.get('can_assign_roles') or o.get('can_post_announcements') or o.get('can_create_events'):
-                        is_officer = True
-                        break
-            except Exception:
-                continue
+                try:
+                    if int(o.get('UserID') or 0) == int(uid):
+                        # if they have any of the admin permissions, treat as officer
+                        if o.get('can_approve_members') or o.get('can_assign_roles') or o.get('can_post_announcements') or o.get('can_create_events'):
+                            is_officer = True
+                            break
+                except Exception as e:
+                    current_app.logger.debug('Error inspecting officer row for is_officer check: %s', e)
+                    continue
 
     # Determine current user's membership for this org (if any)
     user_membership = None
@@ -180,9 +185,11 @@ def org_detail(org_id):
                     if int(m.get('UserID') or 0) == uid and int(m.get('OrgID') or 0) == org_id:
                         user_membership = m
                         break
-                except Exception:
+                except Exception as e:
+                    current_app.logger.debug('Skipping membership row when determining user_membership: %s', e)
                     continue
-        except Exception:
+        except Exception as e:
+            current_app.logger.exception('Error determining user membership for org_detail')
             user_membership = None
 
     # Determine whether current user is an admin (has assign/approve permissions)
@@ -192,10 +199,24 @@ def org_detail(org_id):
             uid = session.get('user_id')
             perms = OfficerRoleService.user_permissions_for_org(org_id, uid)
             is_admin = bool(perms.get('can_assign_roles') or perms.get('can_approve_members'))
-        except Exception:
+        except Exception as e:
+            current_app.logger.exception('Error checking admin permissions for org_detail')
             is_admin = False
 
-    return render_template('org_detail.html', org=org_t, member_count=member_count, pending_count=pending_count, officers=officers, announcements=ann_mapped, events=ev_mapped, is_officer=is_officer, is_admin=is_admin, user_membership=user_membership)
+    # Determine whether current user can post announcements or create events for this org
+    can_post_announcements = False
+    can_create_events = False
+    if session.get('user_id'):
+        try:
+            uid = session.get('user_id')
+            perms_local = OfficerRoleService.user_permissions_for_org(org_id, uid)
+            can_post_announcements = bool(perms_local.get('can_post_announcements'))
+            can_create_events = bool(perms_local.get('can_create_events'))
+        except Exception:
+            can_post_announcements = False
+            can_create_events = False
+
+    return render_template('org_detail.html', org=org_t, member_count=member_count, pending_count=pending_count, officers=officers, announcements=ann_mapped, events=ev_mapped, is_officer=is_officer, is_admin=is_admin, user_membership=user_membership, can_post_announcements=can_post_announcements, can_create_events=can_create_events)
 
 
 @bp.route('/orgs/<int:org_id>/admin')
@@ -372,6 +393,51 @@ def event_detail(event_id):
     ev_display['CreatorName'] = creator_name
     ev_display['Description'] = ev.get('EventDescription') or ev.get('Description') or ''
     return render_template('event_detail.html', event=ev_display)
+
+
+@bp.route('/search')
+def search():
+    q = (request.args.get('q') or '').strip()
+    results = {
+        'orgs': [],
+        'announcements': [],
+        'events': []
+    }
+    if not q:
+        return render_template('search_results.html', query=q, results=results)
+
+    ql = q.lower()
+    try:
+        orgs = OrgService.get_all_organizations()
+        for o in orgs:
+            name = (o.get('OrgName') or '')
+            desc = (o.get('OrgDescription') or '')
+            if ql in name.lower() or ql in desc.lower():
+                results['orgs'].append(o)
+    except Exception:
+        current_app.logger.exception('Failed searching organizations')
+
+    try:
+        ann = AnnouncementService.get_all_announcements()
+        for a in ann:
+            title = (a.get('Title') or '')
+            body = (a.get('Content') or '')
+            if ql in title.lower() or ql in body.lower():
+                results['announcements'].append(a)
+    except Exception:
+        current_app.logger.exception('Failed searching announcements')
+
+    try:
+        evs = EventService.get_all_events()
+        for e in evs:
+            ename = (e.get('EventName') or '')
+            edesc = (e.get('EventDescription') or '')
+            if ql in (ename or '').lower() or ql in (edesc or '').lower():
+                results['events'].append(e)
+    except Exception:
+        current_app.logger.exception('Failed searching events')
+
+    return render_template('search_results.html', query=q, results=results)
 
 
 @bp.route('/events')
@@ -573,4 +639,58 @@ def profile():
     user = UserService.get_user_row_by_email(user_id) if False else None
     # prefer the UserService helper
     user = UserService.get_user_row_by_id(user_id)
-    return render_template('profile.html', user=user)
+    # build user's organizations and roles for display
+    orgs = OrgService.get_all_organizations()
+    memberships = MembershipService.get_all_memberships()
+    officer_roles = OfficerRoleService.get_all_officer_roles()
+    # map membership id -> list of role names
+    role_map = {}
+    for r in officer_roles:
+        try:
+            mid = int(r.get('MembershipID') or 0)
+            if mid:
+                role_map.setdefault(mid, []).append(r.get('RoleName') or r.get('role_name'))
+        except Exception:
+            continue
+
+    user_orgs = []
+    for m in memberships:
+        try:
+            if int(m.get('UserID') or 0) != int(user_id):
+                continue
+            oid = int(m.get('OrgID') or 0)
+            org = next((o for o in orgs if int(o.get('OrgID') or 0) == oid), None)
+            roles = role_map.get(int(m.get('MembershipID') or 0), [])
+            user_orgs.append({'org': org, 'membership': m, 'roles': roles})
+        except Exception:
+            continue
+
+    # basic activity counts
+    announcements = AnnouncementService.get_all_announcements()
+    user_ann_count = sum(1 for a in announcements if str(a.get('CreatedBy')) == str(user_id) or a.get('CreatedBy') in (None, ''))
+
+    # determine create permissions across user's organizations
+    can_post_announcements_any = False
+    can_create_events_any = False
+    try:
+        uid = int(user_id)
+        for uo in user_orgs:
+            try:
+                org_obj = uo.get('org')
+                if not org_obj:
+                    continue
+                perms = OfficerRoleService.user_permissions_for_org(int(org_obj.get('OrgID') or 0), uid)
+                if perms.get('can_post_announcements'):
+                    can_post_announcements_any = True
+                if perms.get('can_create_events'):
+                    can_create_events_any = True
+                if can_post_announcements_any and can_create_events_any:
+                    break
+            except Exception:
+                continue
+    except Exception:
+        # if anything goes wrong, default to False for safety
+        can_post_announcements_any = False
+        can_create_events_any = False
+
+    return render_template('profile.html', user=user, user_orgs=user_orgs, announcement_count=user_ann_count, can_post_announcements=can_post_announcements_any, can_create_events=can_create_events_any)

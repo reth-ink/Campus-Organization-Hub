@@ -2,22 +2,66 @@
 
 {% block content %}
 
-<div class="container">
+<div class="container events-page">
     <h2>All Events</h2>
 
     {% if events %}
+        <div class="events-row" tabindex="0" aria-label="Events list">
         {% for ev in events %}
-        <div class="post-card" style="margin-bottom:10px;">
-            <h3 class="post-title"><a href="{{ url_for('web.event_detail', event_id=ev.EventID) }}">{{ ev.EventName }}</a></h3>
-            <div class="post-meta">When: {{ ev.EventDate }}{% if ev.Location %} &middot; Where: {{ ev.Location }}{% endif %}</div>
-            <p class="post-body">{{ ev.Description }}</p>
-            <div style="font-size:0.9rem;color:#666;">Created by: {{ ev.CreatorName or 'Unknown' }}</div>
-        </div>
+            <div class="post-card event-slide">
+                <h3 class="post-title"><a href="{{ url_for('web.event_detail', event_id=ev.EventID) }}">{{ ev.EventName }}</a></h3>
+                <div class="post-meta">When: {{ ev.EventDate }}{% if ev.Location %} &middot; Where: {{ ev.Location }}{% endif %}</div>
+                <p class="post-body">{{ ev.Description }}</p>
+                <div style="font-size:0.9rem;color:#666;">Created by: {{ ev.CreatorName or 'Unknown' }}</div>
+            </div>
         {% endfor %}
+        </div>
     {% else %}
         <p>No events scheduled.</p>
     {% endif %}
 
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const row = document.querySelector('.events-row');
+    if(!row) return;
+
+    // When user scrolls vertically while hovering the row, translate that
+    // vertical wheel into horizontal scrolling. Use pointerenter/leave so
+    // we can also handle cases where wheel is fired on document but pointer
+    // is over the row (some browsers differ).
+    let pointerOverRow = false;
+    row.addEventListener('pointerenter', () => { pointerOverRow = true; });
+    row.addEventListener('pointerleave', () => { pointerOverRow = false; });
+
+    function normalizeDelta(e){
+        // deltaMode: 0=pixel, 1=line, 2=page. For line units approximate to pixels.
+        return e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    }
+
+    function handleWheel(e){
+        // Respect pinch-zoom / ctrl+wheel behavior
+        if(e.ctrlKey || e.metaKey) return;
+
+        const deltaY = normalizeDelta(e);
+        // Only convert mostly-vertical scrolls into horizontal movement
+        if(Math.abs(deltaY) > Math.abs(e.deltaX)){
+            e.preventDefault();
+            // Smooth scroll by the delta amount (preserve natural direction)
+            row.scrollBy({ left: deltaY, behavior: 'smooth' });
+        }
+    }
+
+    // Attach listener to the row itself (fires when cursor is over it)
+    row.addEventListener('wheel', handleWheel, { passive: false });
+
+    // Some devices/browsers dispatch wheel on the document even when pointer
+    // is over the element. Listen on the document and only act when pointer is over row.
+    document.addEventListener('wheel', function(e){ if(pointerOverRow) handleWheel(e); }, { passive: false });
+});
+</script>
 {% endblock %}
