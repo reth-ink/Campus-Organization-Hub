@@ -1,0 +1,79 @@
+/* Admin page specific overrides to avoid picking up .home-layout grid rules
+   Keep rules narrowly scoped to .admin-layout to avoid affecting other pages.
+*/
+
+.admin-layout {
+    display: grid;
+    /* left sidebar, main admin column, right sidebar */
+    grid-template-columns: 200px 1fr 280px;
+    gap: 20px;
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 100%;
+}
+
+/* Ensure sidebars keep their usual styles but limited to admin layout */
+.admin-layout .left-sidebar,
+.admin-layout .sidebar {
+    height: 100%;
+    overflow: auto;
+}
+
+/* Admin feed should behave as a standard vertical flow (not a multi-column grid) */
+.admin-layout .feed {
+    display: block !important;
+    height: 100%;
+    overflow: auto;
+    padding-right: 6px;
+}
+
+/* Section title in admin should not be sticky or overlay cards */
+.admin-layout .feed .section-title {
+    position: static !important;
+    top: auto !important;
+    z-index: auto !important;
+    padding: 0;
+    margin: 0 0 10px 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Table styling for pending lists */
+.admin-layout table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-layout table th,
+.admin-layout table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.admin-layout .post-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* keep the pending-badge aligned inline with headings/buttons */
+.admin-layout .pending-badge {
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Responsive: collapse sidebars on narrow screens for admin pages */
+@media (max-width: 900px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-layout .left-sidebar,
+    .admin-layout .sidebar {
+        position: static;
+        margin-top: 1.5vh;
+    }
+}

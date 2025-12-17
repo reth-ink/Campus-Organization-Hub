@@ -711,7 +711,9 @@ body {
 
 /* small badge for pending membership count */
 .pending-badge{
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background:#e0e0e0;
     color:#111;
     font-weight:700;
@@ -720,6 +722,24 @@ body {
     margin-left:8px;
     font-size:0.8rem;
     vertical-align:middle;
+    line-height:1;
+}
+
+/* Ensure buttons that contain badges align their contents */
+.post-button, .post-button > * {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* On small screens move the badge below the button so it doesn't break layout */
+@media (max-width: 600px) {
+    .post-button .pending-badge {
+        display: inline-flex; /* keep visible */
+        margin-left: 0;
+        margin-top: 6px;
+        width: auto;
+    }
 }
 
 /* Disabled button style for actions the user cannot perform */

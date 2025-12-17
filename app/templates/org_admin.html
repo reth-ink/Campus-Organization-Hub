@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 
+{% block extra_head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="home-layout">
+<div class="admin-layout">
 
     <aside class="left-sidebar">
         <h3>{{ org.OrgName }} — Admin</h3>
@@ -11,7 +15,11 @@
     </aside>
 
     <main class="feed">
-        <h2 class="section-title">Membership Approvals</h2>
+        <h2 class="section-title">Membership Approvals
+            {% if pending_count and pending_count|int > 0 %}
+                <span class="pending-badge" aria-label="{{ pending_count }} pending requests">{{ pending_count }}</span>
+            {% endif %}
+        </h2>
 
         <h4>Pending Applications</h4>
         {% if pending_memberships %}
